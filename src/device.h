@@ -106,7 +106,18 @@ namespace vkInit
 
 		vk::PhysicalDevice chosenDevice = nullptr;
 
-		// TODO: create a priority list by device type and choose accordingly
+
+		// Priorities for each device type 
+		#define integratedPriority 4
+		#define discretePriority 3
+		#define virtualPriority 2
+		#define cpuPriority 1
+		#define otherPriority 0
+
+
+		vk::PhysicalDeviceType priorityDevice;
+		uint32_t value = 0; 
+
 		// Check if any device is suitable
 		for (vk::PhysicalDevice device : availableDevices)
 		{
@@ -118,11 +129,53 @@ namespace vkInit
 			if (isSuitable(device, debug))
 			{
 				vk::PhysicalDeviceProperties properties = device.getProperties();
-				chosenDevice = device;
 
-				// Prioritize Discrete GPUs
-				if (properties.deviceType == vk::PhysicalDeviceType::eDiscreteGpu)
+				switch (properties.deviceType)
 				{
+				case vk::PhysicalDeviceType::eIntegratedGpu:
+					if (value < integratedPriority)
+					{
+						chosenDevice = device;
+						priorityDevice = vk::PhysicalDeviceType::eIntegratedGpu;
+						value = integratedPriority;
+					}
+
+					break;
+				case vk::PhysicalDeviceType::eDiscreteGpu:
+					if (value < discretePriority)
+					{
+						chosenDevice = device;
+						priorityDevice = vk::PhysicalDeviceType::eDiscreteGpu;
+						value = discretePriority;
+					}
+
+					break;
+				case vk::PhysicalDeviceType::eVirtualGpu:
+					if (value < virtualPriority)
+					{
+						chosenDevice = device;
+						priorityDevice = vk::PhysicalDeviceType::eVirtualGpu;
+						value = virtualPriority;
+					}
+
+					break;
+				case vk::PhysicalDeviceType::eCpu:
+					if (value < cpuPriority)
+					{
+						chosenDevice = device;
+						priorityDevice = vk::PhysicalDeviceType::eCpu;
+						value = cpuPriority;
+					}
+
+					break;
+				default:
+					if (value <= otherPriority)
+					{
+						chosenDevice = device;
+						priorityDevice = vk::PhysicalDeviceType::eOther;
+						value = otherPriority;
+					}
+
 					break;
 				}
 			}
