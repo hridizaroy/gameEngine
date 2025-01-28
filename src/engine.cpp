@@ -87,8 +87,8 @@ void Engine::make_pipeline()
 {
 	vkInit::GraphicsPipelineInBundle specification = {};
 	specification.device = device;
-	specification.vertexFilepath = "../../../../src/shaders/vertex.spv";
-	specification.fragmentFilepath = "../../../../src/shaders/fragment.spv";
+	specification.vertexFilepath = "../shaders/vertex.spv"; 
+	specification.fragmentFilepath = "../shaders/fragment.spv";
 	specification.swapchainExtent = swapchainExtent;
 	specification.swapchainImageFormat = swapchainFormat;
 
