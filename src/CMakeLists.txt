@@ -5,6 +5,7 @@
 include_directories(
   "${PROJECT_SOURCE_DIR}/third-party/glfw-3.4.bin.WIN64/include"
   "${PROJECT_SOURCE_DIR}/third-party/vulkan/Include"
+  "${PROJECT_SOURCE_DIR}/third-party/ImGui"
 )
 
 
