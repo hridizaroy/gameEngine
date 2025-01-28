@@ -11,6 +11,10 @@ Also, please download the GLM library from https://github.com/g-truc/glm/release
 
 Could not push them to github due to some of the large files  
 
+### Other Notes
+
+Please replace the relative paths to the ".spv" files with absolute paths
+
 ### Dependencies
 * cmake
 * Visual Studio 2022
