@@ -22,7 +22,7 @@ namespace vkInit
 			vk::FramebufferCreateInfo framebufferInfo = {};
 			framebufferInfo.flags = vk::FramebufferCreateFlags();
 			framebufferInfo.renderPass = inputChunk.renderpass;
-			framebufferInfo.attachmentCount = attachments.size();
+			framebufferInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
 			framebufferInfo.pAttachments = attachments.data();
 			framebufferInfo.width = inputChunk.swapchainExtent.width;
 			framebufferInfo.height = inputChunk.swapchainExtent.height;

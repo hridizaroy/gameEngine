@@ -19,7 +19,7 @@ void App::build_glfw_window(int width, int height, bool debugMode)
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
 	// Disable resizing for now
-	glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+	glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
 
 	// width, height, title, monitor, another window that want to share resources with
 	if (window = glfwCreateWindow(width, height, appName, nullptr, nullptr))

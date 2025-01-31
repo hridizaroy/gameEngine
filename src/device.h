@@ -194,10 +194,10 @@ namespace vkInit
 		// enabledExtensionCount, enabled extensions, pEnabledFeatures
 		vk::DeviceCreateInfo deviceInfo = vk::DeviceCreateInfo(
 			vk::DeviceCreateFlags(),
-			queueCreateInfo.size(), queueCreateInfo.data(),
-			enabledLayers.size(),
+			static_cast<uint32_t>(queueCreateInfo.size()), queueCreateInfo.data(),
+			static_cast<uint32_t>(enabledLayers.size()),
 			enabledLayers.data(),
-			deviceExtensions.size(), deviceExtensions.data(),
+			static_cast<uint32_t>(deviceExtensions.size()), deviceExtensions.data(),
 			&deviceFeatures
 		);
 

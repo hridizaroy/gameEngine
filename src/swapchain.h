@@ -165,6 +165,8 @@ namespace vkInit
 				capabilities.maxImageExtent.height,
 				std::max(capabilities.minImageExtent.height, height)
 			);
+
+			return extent;
 		}
 	}
 
@@ -187,7 +189,7 @@ namespace vkInit
 		// Increase frame rate by requesting 1 additional image
 		uint32_t imageCount = std::min(
 			support.capabilities.maxImageCount,
-			support.capabilities.minImageCount + 1
+			support.capabilities.minImageCount + 2
 		);
 
 

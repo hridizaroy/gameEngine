@@ -50,6 +50,8 @@ namespace vkUtil
 			{
 				std::cout << "Failed to create shader module for \"" << filename << "\"" << std::endl;
 			}
+
+			return nullptr;
 		}
 	}
 }
