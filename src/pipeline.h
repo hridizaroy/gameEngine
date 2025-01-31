@@ -48,6 +48,8 @@ namespace vkInit
 			{
 				std::cout << "Failed to create pipeline layout :/" << std::endl;
 			}
+
+			return nullptr;
 		}
 	}
 
@@ -95,6 +97,8 @@ namespace vkInit
 			{
 				std::cout << "Failed to create renderpass!" << std::endl;
 			}
+
+			return nullptr;
 		}
 	}
 
@@ -137,11 +141,11 @@ namespace vkInit
 
 
 		// Viewport and Scissor
-		vk::Viewport viewport = {};
+		vk::Viewport viewport{};
 		viewport.x = 0.0f;
 		viewport.y = 0.0f;
-		viewport.width = specification.swapchainExtent.width;
-		viewport.height = specification.swapchainExtent.height;
+		viewport.width = static_cast<float>(specification.swapchainExtent.width);
+		viewport.height = static_cast<float>(specification.swapchainExtent.height);
 		viewport.minDepth = 0.0f;
 		viewport.maxDepth = 1.0f;
 
@@ -181,7 +185,7 @@ namespace vkInit
 		fragmentShaderInfo.pName = "main";
 		shaderStages.push_back(fragmentShaderInfo);
 
-		pipelineInfo.stageCount = shaderStages.size();
+		pipelineInfo.stageCount = static_cast<uint32_t>(shaderStages.size());
 		pipelineInfo.pStages = shaderStages.data();
 
 
