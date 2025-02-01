@@ -26,6 +26,8 @@ Engine::Engine(int width, int height, GLFWwindow* window, const char* appName, b
 	make_device();
 	make_pipeline();
 	finalize_setup();
+
+	make_assets();
 }
 
 void Engine::make_instance()
@@ -166,6 +168,19 @@ void Engine::finalize_setup()
 	make_sync_objects();
 }
 
+void Engine::make_assets()
+{
+	triangle = new TriangleMesh(physicalDevice, device);
+}
+
+void Engine::prepare_scene(const vk::CommandBuffer& commandBuffer)
+{
+	vk::Buffer vertexBuffers[] = { triangle->getVertexBuffer() };
+	vk::DeviceSize offsets[] = { 0 };
+
+	commandBuffer.bindVertexBuffers(0, 1, vertexBuffers, offsets);
+}
+
 void Engine::record_draw_commands(vk::CommandBuffer commandBuffer, uint32_t imageIndex, Scene* scene)
 {
 	vk::CommandBufferBeginInfo beginInfo = {};
@@ -197,25 +212,24 @@ void Engine::record_draw_commands(vk::CommandBuffer commandBuffer, uint32_t imag
 
 	commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline);
 
-	//for (glm::vec3& position : scene->trianglePositions)
-	//{
-	//	glm::mat4 model = glm::translate(glm::mat4(1.0f), position);
-	//	vkUtil::ObjectData objectData;
-	//	objectData.model = model;
+	prepare_scene(commandBuffer);
 
-	//	commandBuffer.pushConstants(layout, vk::ShaderStageFlagBits::eVertex, 0, sizeof(objectData), & objectData);
-	//	commandBuffer.draw(3, 1, 0, 0);
-	//}
+	for (glm::vec3& position : scene->trianglePositions)
+	{
+		glm::mat4 model = glm::translate(glm::mat4(1.0f), position);
+		vkUtil::ObjectData objectData;
+		objectData.model = model;
 
-	glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(1.0f, 1.0f, 1.0f));
+		commandBuffer.pushConstants(layout, vk::ShaderStageFlagBits::eVertex, 0, sizeof(objectData), & objectData);
+		commandBuffer.draw(3, 1, 0, 0);
+	}
+
+	/*glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(1.0f, 1.0f, 1.0f));
 	vkUtil::ObjectData objectData;
 	objectData.model = model;
 	commandBuffer.pushConstants(layout, vk::ShaderStageFlagBits::eVertex, 0, sizeof(objectData), &objectData);
 
-	commandBuffer.draw(6, 1, 0, 0);
-
-	/*commandBuffer.pushConstants(layout, vk::ShaderStageFlagBits::eVertex, 0, sizeof(objectData), &objectData);
-	commandBuffer.draw(3, 1, 0, 0);*/
+	commandBuffer.draw(6, 1, 0, 0)*/;
 
 	commandBuffer.endRenderPass();
 
@@ -337,6 +351,8 @@ Engine::~Engine()
 	cleanup_pipeline();
 
 	cleanup_swapchain();
+
+	triangle->cleanup(device);
 
 	device.destroy();
 

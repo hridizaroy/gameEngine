@@ -2,8 +2,8 @@
 
 #include "config.h"
 #include "shaders.h"
-#include "pipeline.h"
 #include "render_structs.h"
+#include "mesh.h"
 
 namespace vkInit
 {
@@ -111,11 +111,17 @@ namespace vkInit
 		std::vector<vk::PipelineShaderStageCreateInfo> shaderStages;
 
 		// Vertex Input
+		uint32_t binding = 0;
+		vk::VertexInputBindingDescription bindingDesc = vkMesh::getBasicVertexBindingDesc(binding);
+		std::array<vk::VertexInputAttributeDescription, 2> attrDesc = vkMesh::getBasicAttrDesc(binding);
+
 		vk::PipelineVertexInputStateCreateInfo vertexInputInfo = {};
 		vertexInputInfo.flags = vk::PipelineVertexInputStateCreateFlags();
-		// No buffers and attributes right now - we will hard code them
-		vertexInputInfo.vertexBindingDescriptionCount = 0;
-		vertexInputInfo.vertexAttributeDescriptionCount = 0;
+		vertexInputInfo.vertexBindingDescriptionCount = 1;
+		vertexInputInfo.vertexAttributeDescriptionCount = 2;
+		vertexInputInfo.pVertexBindingDescriptions = &bindingDesc;
+		vertexInputInfo.pVertexAttributeDescriptions = attrDesc.data();
+
 		pipelineInfo.pVertexInputState = &vertexInputInfo;
 
 		// Input Assembly

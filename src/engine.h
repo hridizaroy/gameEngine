@@ -6,6 +6,8 @@
 
 #include "scene.h"
 
+#include "TriangleMesh.h"
+
 class Engine
 {
 public:
@@ -65,6 +67,9 @@ private:
 	// sync-related variables
 	int maxFramesInFlight, frameNum;
 
+	// assets
+	TriangleMesh* triangle;
+
 	// instance setup
 	void make_instance();
 
@@ -79,6 +84,9 @@ private:
 	void make_framebuffers();
 	void make_sync_objects();
 	void finalize_setup();
+
+	void make_assets();
+	void prepare_scene(const vk::CommandBuffer& commandBuffer);
 
 	void record_draw_commands(vk::CommandBuffer commandBuffer, uint32_t imageIndex, Scene* scene);
 
