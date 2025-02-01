@@ -7,21 +7,20 @@ layout(location = 0) out vec4 outColor;
 const float WIDTH = 800.0f;
 const float HEIGHT = 600.0f;
 
-/*
-void main()
-{
-	
-	gl_FragCoord
-	outColor = vec4(fragColor, 1.0);
-}
-*/
+
+// SDF functions 
+// From: https://iquilezles.org/articles/distfunctions/
+float Sphere(vec3 p, vec3 center, float radius);
+float Box(vec3 p, vec3 center, vec3 size);
+float RoundBox(vec3 p, vec3 center, vec3 size, float rounding);
+
 
 float map(vec3 p)
 {
-    float d = distance(p, vec3(-1, 0, -5)) - 1.;     // sphere at (-1,0,5) with radius 1
-    d = min(d, distance(p, vec3(2, 0, -3)) - 1.);    // second sphere
-    d = min(d, distance(p, vec3(-2, 0, -2)) - 1.);   // and another
-    d = min(d, p.y + 1.);                            // horizontal plane at y = -1
+    float d =  RoundBox(p, vec3(-1, 0, -5), vec3(1, 1, 1), 0.1); //distance(p, vec3(-1, 0, -5)) - 1.;     // sphere at (-1,0,5) with radius 1
+    //d = min(d, Box(p, vec3(2, 0, -3), vec3(1, 1, 1)));    // second sphere
+   // d = min(d, distance(p, vec3(-2, 0, -2)) - 1.);   // and another
+    //d = min(d, p.y + 1.);                            // horizontal plane at y = -1
     return d;
 }
 
@@ -80,4 +79,23 @@ vec4 allCalcs(vec2 fragCoord) {
 void main()
 {
     outColor = allCalcs(gl_FragCoord.xy);
+}
+
+
+
+float Sphere(vec3 p, vec3 center, float radius)
+{
+	return distance(p, center) - radius;
+}
+
+float Box(vec3 p, vec3 center, vec3 size)
+{
+	vec3 q = abs(p - center) - size;
+	return length(max(q, 0.0)) + min(max(q.x, max(q.y, q.z)), 0.0);
+}
+
+float RoundBox(vec3 p, vec3 center, vec3 size, float rounding)
+{   
+    vec3 q = abs(p - center) - size + rounding;
+    return length(max(q, 0.0)) + min(max(q.x,max(q.y,q.z)),0.0) - rounding;
 }

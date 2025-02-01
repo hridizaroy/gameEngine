@@ -1,2 +1,2 @@
-C:\VulkanSDK\1.3.275.0\Bin\glslc.exe shader.frag -o fragment.spv
-C:\VulkanSDK\1.3.275.0\Bin\glslc.exe shader.vert -o vertex.spv
+..\..\third-party\vulkan\Bin\glslc.exe shader.frag -o fragment.spv
+..\..\third-party\vulkan\Bin\glslc.exe shader.vert -o vertex.spv
