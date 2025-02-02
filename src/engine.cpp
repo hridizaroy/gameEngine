@@ -168,14 +168,62 @@ void Engine::finalize_setup()
 	make_sync_objects();
 }
 
+// Vertices need to be in counterclockwise winding order
+// (assuming the axis is coming from the screen towards you)
 void Engine::make_assets()
 {
-	triangle = new TriangleMesh(physicalDevice, device);
+	sceneData = new SceneData();
+
+	std::vector<float> vertexData = {
+		1.0f, 0.0f, 1.0f, 1.0f, 0.0f, -0.05f, 0.0f,
+		1.0f, 0.0f, 1.0f, 1.0f, 0.05f, 0.05f, 0.0f,
+		1.0f, 0.0f, 1.0f, 1.0f, -0.05f, 0.05f, 0.0f
+	};
+
+	sceneData->consume(MeshType::TRIANGLE, vertexData);
+
+	vertexData = {
+		0.0f, 1.0f, 0.0f, 1.0f, -0.55f, -0.6f, +0.0f,
+		0.0f, 1.0f, 0.0f, 1.0f, -0.75f, -0.7f, +0.0f,
+		0.0f, 1.0f, 0.0f, 1.0f, -0.6f, -0.65f, +0.0f,
+
+		0.0f, 1.0f, 0.0f, 1.0f, -0.55f, -0.6f, +0.0f,
+		0.0f, 1.0f, 0.0f, 1.0f, -0.9f, -0.5f, +0.0f,
+		0.0f, 1.0f, 0.0f, 1.0f, -0.75f, -0.7f, +0.0f,
+
+		0.0f, 1.0f, 0.0f, 1.0f, -0.55f, -0.6f, +0.0f,
+		0.0f, 1.0f, 0.0f, 1.0f, -0.8f, +0.9f, +0.0f,
+		0.0f, 1.0f, 0.0f, 1.0f, -0.9f, -0.5f, +0.0f
+	};
+
+	sceneData->consume(MeshType::PENTAGON, vertexData);
+
+	vertexData = {
+		1.0f, 0.0f, 0.0f, 1.0f, +0.8f, +0.9f, +0.0f,
+		1.0f, 0.0f, 0.0f, 1.0f, +0.75f, -0.7f, +0.0f,
+		1.0f, 0.0f, 0.0f, 1.0f, +0.9f, -0.5f, +0.0f,
+
+		1.0f, 0.0f, 0.0f, 1.0f, +0.8f, +0.9f, +0.0f,
+		1.0f, 0.0f, 0.0f, 1.0f, +0.6f, -0.65f, +0.0f,
+		1.0f, 0.0f, 0.0f, 1.0f, +0.75f, -0.7f, +0.0f,
+
+		1.0f, 0.0f, 0.0f, 1.0f, +0.8f, +0.9f, +0.0f,
+		1.0f, 0.0f, 0.0f, 1.0f, +0.55f, -0.6f, +0.0f,
+		1.0f, 0.0f, 0.0f, 1.0f, +0.6f, -0.65f, +0.0f,
+
+		1.0f, 0.0f, 0.0f, 1.0f, +0.8f, +0.9f, +0.0f,
+		1.0f, 0.0f, 0.0f, 1.0f, +0.7f, +0.85f, +0.0f,
+		1.0f, 0.0f, 0.0f, 1.0f, +0.55f, -0.6f, +0.0f
+	};
+
+	sceneData->consume(MeshType::HEXAGON, vertexData);
+
+	sceneData->finalize(physicalDevice, device);
 }
 
 void Engine::prepare_scene(const vk::CommandBuffer& commandBuffer)
 {
-	vk::Buffer vertexBuffers[] = { triangle->getVertexBuffer() };
+	vk::Buffer vertexBuffers[] = { sceneData->getVertexBuffer() };
 	vk::DeviceSize offsets[] = { 0 };
 
 	commandBuffer.bindVertexBuffers(0, 1, vertexBuffers, offsets);
@@ -214,14 +262,61 @@ void Engine::record_draw_commands(vk::CommandBuffer commandBuffer, uint32_t imag
 
 	prepare_scene(commandBuffer);
 
-	for (glm::vec3& position : scene->trianglePositions)
-	{
-		glm::mat4 model = glm::translate(glm::mat4(1.0f), position);
-		vkUtil::ObjectData objectData;
-		objectData.model = model;
+	// Triangle
+	std::pair<size_t, size_t> offset_size = sceneData->lookupOffsetSize(MeshType::TRIANGLE);
 
-		commandBuffer.pushConstants(layout, vk::ShaderStageFlagBits::eVertex, 0, sizeof(objectData), & objectData);
-		commandBuffer.draw(3, 1, 0, 0);
+	size_t offset = offset_size.first;
+	size_t vertexCount = offset_size.second;
+
+	if (vertexCount != 0)
+	{
+		for (glm::vec3& position : scene->trianglePositions)
+		{
+			glm::mat4 model = glm::translate(glm::mat4(1.0f), position);
+			vkUtil::ObjectData objectData;
+			objectData.model = model;
+
+			commandBuffer.pushConstants(layout, vk::ShaderStageFlagBits::eVertex, 0, sizeof(objectData), &objectData);
+			commandBuffer.draw(vertexCount, 1, offset, 0);
+		}
+	}
+
+	// Pentagon
+	offset_size = sceneData->lookupOffsetSize(MeshType::PENTAGON);
+
+	offset = offset_size.first;
+	vertexCount = offset_size.second;
+
+	if (vertexCount != 0)
+	{
+		for (glm::vec3& position : scene->pentagonPositions)
+		{
+			glm::mat4 model = glm::translate(glm::mat4(1.0f), position);
+			vkUtil::ObjectData objectData;
+			objectData.model = model;
+
+			commandBuffer.pushConstants(layout, vk::ShaderStageFlagBits::eVertex, 0, sizeof(objectData), &objectData);
+			commandBuffer.draw(vertexCount, 1, offset, 0);
+		}
+	}
+
+	// Hexagon
+	offset_size = sceneData->lookupOffsetSize(MeshType::HEXAGON);
+
+	offset = offset_size.first;
+	vertexCount = offset_size.second;
+
+	if (vertexCount != 0)
+	{
+		for (glm::vec3& position : scene->hexagonPositions)
+		{
+			glm::mat4 model = glm::translate(glm::mat4(1.0f), position);
+			vkUtil::ObjectData objectData;
+			objectData.model = model;
+
+			commandBuffer.pushConstants(layout, vk::ShaderStageFlagBits::eVertex, 0, sizeof(objectData), &objectData);
+			commandBuffer.draw(vertexCount, 1, offset, 0);
+		}
 	}
 
 	/*glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(1.0f, 1.0f, 1.0f));
@@ -352,7 +447,7 @@ Engine::~Engine()
 
 	cleanup_swapchain();
 
-	triangle->cleanup(device);
+	sceneData->cleanup(device);
 
 	device.destroy();
 

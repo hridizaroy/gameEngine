@@ -6,7 +6,7 @@
 
 #include "scene.h"
 
-#include "TriangleMesh.h"
+#include "SceneData.h"
 
 class Engine
 {
@@ -68,7 +68,7 @@ private:
 	int maxFramesInFlight, frameNum;
 
 	// assets
-	TriangleMesh* triangle;
+	SceneData* sceneData;
 
 	// instance setup
 	void make_instance();
