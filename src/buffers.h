@@ -10,6 +10,7 @@ namespace vkUtil
 		vk::BufferUsageFlags usage;
 		vk::Device logicalDevice;
 		vk::PhysicalDevice physicalDevice;
+		vk::MemoryPropertyFlags memoryProperties;
 	};
 
 	struct BufferData
@@ -22,7 +23,10 @@ namespace vkUtil
 		uint32_t supportedMemoryIndices,
 		vk::MemoryPropertyFlags requestedProperties);
 
-	void allocateBufferMemory(BufferData& bufferData, const BufferInput& input);
+	void allocate_buffer_memory(BufferData& bufferData, const BufferInput& input);
 
 	BufferData create_buffer(const BufferInput& input);
+
+	void copy_buffer(const BufferData& srcBufferData, const BufferData& dstBufferData,
+		const vk::DeviceSize& size, const vk::Queue& queue, const vk::CommandBuffer& commandBuffer);
 }

@@ -218,7 +218,8 @@ void Engine::make_assets()
 
 	sceneData->consume(MeshType::HEXAGON, vertexData);
 
-	sceneData->finalize(physicalDevice, device);
+	FinalizationChunk finalizationChunk{device, physicalDevice, graphicsQueue, mainCommandBuffer};
+	sceneData->finalize(finalizationChunk);
 }
 
 void Engine::prepare_scene(const vk::CommandBuffer& commandBuffer)

@@ -44,19 +44,43 @@ std::pair<size_t, size_t> SceneData::lookupOffsetSize(const MeshType& meshType)
 }
 
 
-void SceneData::finalize(const vk::PhysicalDevice& physicalDevice, const vk::Device& logicalDevice)
+void SceneData::finalize(const FinalizationChunk& finalizationChunk)
 {
 	vkUtil::BufferInput inputChunk{};
-	inputChunk.logicalDevice = logicalDevice;
-	inputChunk.physicalDevice = physicalDevice;
-	inputChunk.usage = vk::BufferUsageFlagBits::eVertexBuffer | vk::BufferUsageFlagBits::eTransferDst;
+	inputChunk.logicalDevice = finalizationChunk.logicalDevice;
+	inputChunk.physicalDevice = finalizationChunk.physicalDevice;
+	inputChunk.usage = vk::BufferUsageFlagBits::eTransferSrc;
 	inputChunk.size = sizeof(float) * lump.size();
+	// Host visible = we can write to it directly
+	// Host coherent = Write operation happens right on the location,
+	// we don't have to worry about sync
+	inputChunk.memoryProperties = vk::MemoryPropertyFlagBits::eHostVisible |
+		vk::MemoryPropertyFlagBits::eHostCoherent;
+
+	// Copy to temp location in GPU
+	vkUtil::BufferData tempBufferData = vkUtil::create_buffer(inputChunk);
+
+	void* memoryLocation = finalizationChunk.logicalDevice.mapMemory(
+		tempBufferData.bufferMemory, 0, inputChunk.size);
+
+	memcpy(memoryLocation, lump.data(), inputChunk.size);
+
+	finalizationChunk.logicalDevice.unmapMemory(tempBufferData.bufferMemory);
+
+	// Copy from temp GPU location to high performance area
+	inputChunk.usage = vk::BufferUsageFlagBits::eTransferDst
+		| vk::BufferUsageFlagBits::eVertexBuffer;
+	inputChunk.memoryProperties = vk::MemoryPropertyFlagBits::eDeviceLocal;
 
 	vertexBufferData = vkUtil::create_buffer(inputChunk);
 
-	void* memoryLocation = logicalDevice.mapMemory(vertexBufferData.bufferMemory, 0, inputChunk.size);
-	memcpy(memoryLocation, lump.data(), inputChunk.size);
-	logicalDevice.unmapMemory(vertexBufferData.bufferMemory);
+	vkUtil::copy_buffer(tempBufferData, vertexBufferData,
+		inputChunk.size, finalizationChunk.queue,
+		finalizationChunk.commandBuffer);
+
+	// free temp buffer
+	finalizationChunk.logicalDevice.destroyBuffer(tempBufferData.buffer);
+	finalizationChunk.logicalDevice.freeMemory(tempBufferData.bufferMemory);
 }
 
 

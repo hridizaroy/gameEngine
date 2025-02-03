@@ -4,6 +4,14 @@
 
 #include "buffers.h"
 
+struct FinalizationChunk
+{
+	const vk::Device& logicalDevice;
+	const vk::PhysicalDevice& physicalDevice;
+	const vk::Queue& queue;
+	const vk::CommandBuffer& commandBuffer;
+};
+
 class SceneData
 {
 public:
@@ -11,7 +19,7 @@ public:
 	~SceneData();
 
 	void consume(const MeshType& mesh, const std::vector<float>& vertexData);
-	void finalize(const vk::PhysicalDevice& physicalDevice, const vk::Device& logicalDevice);
+	void finalize(const FinalizationChunk& finalizationChunk);
 
 	vk::Buffer getVertexBuffer() const;
 

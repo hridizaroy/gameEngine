@@ -28,7 +28,7 @@ namespace vkUtil
 		throw std::exception("No suitable memory type found!");
 	}
 
-	void allocateBufferMemory(BufferData& bufferData, const BufferInput& input)
+	void allocate_buffer_memory(BufferData& bufferData, const BufferInput& input)
 	{
 		vk::MemoryRequirements requirements =
 			input.logicalDevice.getBufferMemoryRequirements(bufferData.buffer);
@@ -36,11 +36,7 @@ namespace vkUtil
 		vk::MemoryAllocateInfo allocInfo;
 		allocInfo.memoryTypeIndex = find_memory_type_idx(input.physicalDevice,
 			requirements.memoryTypeBits,
-			// Host visible = we can write to it directly
-			// Host coherent = Write operation happens right on the location,
-			// we don't have to worry about sync
-			vk::MemoryPropertyFlagBits::eHostVisible
-			| vk::MemoryPropertyFlagBits::eHostCoherent);
+			input.memoryProperties);
 		allocInfo.allocationSize = input.size;
 
 		bufferData.bufferMemory = input.logicalDevice.allocateMemory(allocInfo);
@@ -58,8 +54,35 @@ namespace vkUtil
 		BufferData bufferData;
 		bufferData.buffer = input.logicalDevice.createBuffer(bufferCreateInfo);
 
-		allocateBufferMemory(bufferData, input);
+		allocate_buffer_memory(bufferData, input);
 
 		return bufferData;
+	}
+
+	void copy_buffer(const BufferData& srcBufferData, const BufferData& dstBufferData,
+		const vk::DeviceSize& size, const vk::Queue& queue, const vk::CommandBuffer& commandBuffer)
+	{
+		commandBuffer.reset();
+
+		vk::CommandBufferBeginInfo beginInfo{};
+		beginInfo.flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit;
+
+		commandBuffer.begin(beginInfo);
+
+		vk::BufferCopy copyRegion{};
+		copyRegion.srcOffset = 0;
+		copyRegion.dstOffset = 0;
+		copyRegion.size = size;
+		
+		commandBuffer.copyBuffer(srcBufferData.buffer, dstBufferData.buffer, 1, &copyRegion);
+
+		commandBuffer.end();
+
+		vk::SubmitInfo submitInfo{};
+		submitInfo.commandBufferCount = 1;
+		submitInfo.pCommandBuffers = &commandBuffer;
+
+		queue.submit(1, &submitInfo, nullptr);
+		queue.waitIdle();
 	}
 }
