@@ -7,6 +7,7 @@
 #include "framebuffer.h"
 #include "commands.h"
 #include "sync.h"
+#include "descriptors.h"
 
 
 Engine::Engine(int width, int height, GLFWwindow* window, const char* appName, bool debugMode)
@@ -24,7 +25,10 @@ Engine::Engine(int width, int height, GLFWwindow* window, const char* appName, b
 
 	make_instance();
 	make_device();
+
+	make_descriptor_set_layout();
 	make_pipeline();
+
 	finalize_setup();
 
 	make_assets();
@@ -90,7 +94,7 @@ void Engine::recreate_swapchain()
 
 	make_swapchain();
 	make_framebuffers();
-	make_sync_objects();
+	make_frame_resources();
 
 	vkInit::commandBufferInputChunk commandBufferInput = { device, commandPool, swapchainFrames };
 	vkInit::make_frame_command_buffers(commandBufferInput, debugMode);
@@ -119,14 +123,27 @@ void Engine::make_device()
 	frameNum = 0;
 }
 
+void Engine::make_descriptor_set_layout()
+{
+	vkInit::DescriptorSetLayoutData bindings{};
+	bindings.count = 1;
+	bindings.indices.push_back(0);
+	bindings.types.push_back(vk::DescriptorType::eUniformBuffer);
+	bindings.counts.push_back(1);
+	bindings.stages.push_back(vk::ShaderStageFlagBits::eVertex);
+
+	descriptorSetLayout = vkInit::make_descriptor_set_layout(device, bindings);
+}
+
 void Engine::make_pipeline()
 {
-	vkInit::GraphicsPipelineInBundle specification = {};
+	vkInit::GraphicsPipelineInBundle specification{};
 	specification.device = device;
 	specification.vertexFilepath = "./shaders/vertex.spv";
 	specification.fragmentFilepath = "./shaders/fragment.spv";
 	specification.swapchainExtent = swapchainExtent;
 	specification.swapchainImageFormat = swapchainFormat;
+	specification.descriptorSetLayout = descriptorSetLayout;
 
 	// TODO: Handle File IO errors
 	vkInit::GraphicsPipelineOutBundle output = vkInit::make_graphics_pipeline(specification, debugMode);
@@ -145,13 +162,26 @@ void Engine::make_framebuffers()
 	vkInit::make_framebuffers(framebufferInput, swapchainFrames, debugMode);
 }
 
-void Engine::make_sync_objects()
+void Engine::make_frame_resources()
 {
+	vkInit::DescriptorSetLayoutData bindings{};
+	bindings.count = 1;
+	bindings.types.push_back(vk::DescriptorType::eUniformBuffer);
+
+	descriptorPool = vkInit::make_descriptor_pool(device,
+		static_cast<uint32_t>(swapchainFrames.size()), bindings);
+
+
 	for (vkUtil::SwapchainFrame& frame : swapchainFrames)
 	{
 		frame.imageAvailable = vkInit::make_semaphore(device, debugMode);
 		frame.renderFinished = vkInit::make_semaphore(device, debugMode);
 		frame.inFlight = vkInit::make_fence(device, debugMode);
+
+		frame.make_UBO_resources(device, physicalDevice);
+
+		frame.descriptorSet = vkInit::allocate_descriptor_set(
+			device, descriptorPool, descriptorSetLayout);
 	}
 }
 
@@ -165,7 +195,7 @@ void Engine::finalize_setup()
 	mainCommandBuffer = vkInit::make_main_command_buffer(commandBufferInput, debugMode);
 	vkInit::make_frame_command_buffers(commandBufferInput, debugMode);
 
-	make_sync_objects();
+	make_frame_resources();
 }
 
 // Vertices need to be in counterclockwise winding order
@@ -222,6 +252,33 @@ void Engine::make_assets()
 	sceneData->finalize(finalizationChunk);
 }
 
+void Engine::prepare_frame(const uint32_t imageIndex)
+{
+	glm::vec3 eye{ 1.0f, 0.0f, -1.0f };
+	glm::vec3 center{ 0.0f, 0.0f, 0.0f };
+	glm::vec3 up{ 0.0f, 0.0f, -1.0f };
+	glm::mat4 view{ glm::lookAt(eye, center, up) };
+
+	glm::mat4 projection = glm::perspective(
+		glm::radians(45.0f),
+		static_cast<float>(swapchainExtent.width) / static_cast<float>(swapchainExtent.height),
+		0.1f, 10.0f
+	);
+
+	projection[1][1] *= -1.0f;
+
+
+	swapchainFrames[imageIndex].camData.view = view;
+	swapchainFrames[imageIndex].camData.projection = projection;
+	swapchainFrames[imageIndex].camData.viewProjection = projection * view;
+
+	memcpy(swapchainFrames[imageIndex].camDataWriteLocation,
+		&(swapchainFrames[imageIndex].camData),
+		sizeof(vkUtil::UBOData));
+
+	swapchainFrames[imageIndex].fill_descriptor_set(device);
+}
+
 void Engine::prepare_scene(const vk::CommandBuffer& commandBuffer)
 {
 	vk::Buffer vertexBuffers[] = { sceneData->getVertexBuffer() };
@@ -261,6 +318,14 @@ void Engine::record_draw_commands(vk::CommandBuffer commandBuffer, uint32_t imag
 
 	commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline);
 
+	commandBuffer.bindDescriptorSets(
+		vk::PipelineBindPoint::eGraphics,
+		layout,
+		0,
+		swapchainFrames[imageIndex].descriptorSet,
+		nullptr
+	);
+
 	prepare_scene(commandBuffer);
 
 	// Triangle
@@ -278,7 +343,7 @@ void Engine::record_draw_commands(vk::CommandBuffer commandBuffer, uint32_t imag
 			objectData.model = model;
 
 			commandBuffer.pushConstants(layout, vk::ShaderStageFlagBits::eVertex, 0, sizeof(objectData), &objectData);
-			commandBuffer.draw(vertexCount, 1, offset, 0);
+			commandBuffer.draw(static_cast<uint32_t>(vertexCount), 1, static_cast<uint32_t>(offset), 0);
 		}
 	}
 
@@ -297,7 +362,7 @@ void Engine::record_draw_commands(vk::CommandBuffer commandBuffer, uint32_t imag
 			objectData.model = model;
 
 			commandBuffer.pushConstants(layout, vk::ShaderStageFlagBits::eVertex, 0, sizeof(objectData), &objectData);
-			commandBuffer.draw(vertexCount, 1, offset, 0);
+			commandBuffer.draw(static_cast<uint32_t>(vertexCount), 1, static_cast<uint32_t>(offset), 0);
 		}
 	}
 
@@ -316,7 +381,7 @@ void Engine::record_draw_commands(vk::CommandBuffer commandBuffer, uint32_t imag
 			objectData.model = model;
 
 			commandBuffer.pushConstants(layout, vk::ShaderStageFlagBits::eVertex, 0, sizeof(objectData), &objectData);
-			commandBuffer.draw(vertexCount, 1, offset, 0);
+			commandBuffer.draw(static_cast<uint32_t>(vertexCount), 1, static_cast<uint32_t>(offset), 0);
 		}
 	}
 
@@ -362,6 +427,8 @@ void Engine::render(Scene* scene)
 	VkCommandBuffer commandBuffer = swapchainFrames[frameNum].commandBuffer;
 
 	vkResetCommandBuffer(commandBuffer, 0);
+
+	prepare_frame(imageIndex);
 
 	record_draw_commands(commandBuffer, imageIndex, scene);
 
@@ -421,9 +488,15 @@ void Engine::cleanup_swapchain()
 		device.destroySemaphore(frame.imageAvailable);
 		device.destroySemaphore(frame.renderFinished);
 		device.destroyFence(frame.inFlight);
+
+		device.unmapMemory(frame.camDataBuffer.bufferMemory);
+		device.freeMemory(frame.camDataBuffer.bufferMemory);
+		device.destroyBuffer(frame.camDataBuffer.buffer);
 	}
 
 	device.destroySwapchainKHR(swapchain);
+
+	device.destroyDescriptorPool(descriptorPool);
 }
 
 void Engine::cleanup_pipeline()
@@ -447,6 +520,8 @@ Engine::~Engine()
 	cleanup_pipeline();
 
 	cleanup_swapchain();
+
+	device.destroyDescriptorSetLayout(descriptorSetLayout);
 
 	sceneData->cleanup(device);
 

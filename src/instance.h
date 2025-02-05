@@ -126,7 +126,7 @@ namespace vkInit
 
 		// Alternative: Drop down to an earlier version to ensure compatibility with more devices
 		// variant, major, minor, patch
-		version = VK_MAKE_API_VERSION(0, 1, 0, 0);
+		version = VK_MAKE_API_VERSION(0, 1, 1, 0);
 
 
 		// Application Info

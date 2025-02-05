@@ -67,6 +67,10 @@ private:
 	// sync-related variables
 	int maxFramesInFlight, frameNum;
 
+	// Descriptor-related variables
+	vk::DescriptorSetLayout descriptorSetLayout;
+	vk::DescriptorPool descriptorPool;
+
 	// assets
 	SceneData* sceneData;
 
@@ -79,14 +83,16 @@ private:
 	void make_device();
 
 	// pipeline setup
+	void make_descriptor_set_layout();
 	void make_pipeline();
 
 	void make_framebuffers();
-	void make_sync_objects();
+	void make_frame_resources();
 	void finalize_setup();
 
 	void make_assets();
 	void prepare_scene(const vk::CommandBuffer& commandBuffer);
+	void prepare_frame(const uint32_t imageIndex);
 
 	void record_draw_commands(vk::CommandBuffer commandBuffer, uint32_t imageIndex, Scene* scene);
 

@@ -14,6 +14,7 @@ namespace vkInit
 		std::string fragmentFilepath;
 		vk::Extent2D swapchainExtent;
 		vk::Format swapchainImageFormat;
+		vk::DescriptorSetLayout descriptorSetLayout;
 	};
 
 	struct GraphicsPipelineOutBundle
@@ -24,11 +25,13 @@ namespace vkInit
 	};
 
 
-	vk::PipelineLayout make_pipeline_layout(vk::Device device, bool debug)
+	vk::PipelineLayout make_pipeline_layout(const vk::Device& device,
+		const vk::DescriptorSetLayout& descriptorSetLayout, bool debug)
 	{
 		vk::PipelineLayoutCreateInfo layoutInfo;
 		layoutInfo.flags = vk::PipelineLayoutCreateFlags();
-		layoutInfo.setLayoutCount = 0;
+		layoutInfo.setLayoutCount = 1; // Descriptor set layout
+		layoutInfo.pSetLayouts = &descriptorSetLayout;
 
 		// Push constants
 		layoutInfo.pushConstantRangeCount = 1;
@@ -103,7 +106,9 @@ namespace vkInit
 	}
 
 
-	GraphicsPipelineOutBundle make_graphics_pipeline(GraphicsPipelineInBundle specification, bool debug)
+	GraphicsPipelineOutBundle make_graphics_pipeline(
+		const GraphicsPipelineInBundle& specification,
+		bool debug)
 	{
 		vk::GraphicsPipelineCreateInfo pipelineInfo = {};
 		pipelineInfo.flags = vk::PipelineCreateFlags();
@@ -226,7 +231,8 @@ namespace vkInit
 		{
 			std::cout << "Create Pipeline Layout" << std::endl;
 		}
-		vk::PipelineLayout layout = make_pipeline_layout(specification.device, debug);
+		vk::PipelineLayout layout = make_pipeline_layout(specification.device,
+										specification.descriptorSetLayout, debug);
 		pipelineInfo.layout = layout;
 
 
