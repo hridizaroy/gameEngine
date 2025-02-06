@@ -37,7 +37,7 @@ namespace vkUtil
 		allocInfo.memoryTypeIndex = find_memory_type_idx(input.physicalDevice,
 			requirements.memoryTypeBits,
 			input.memoryProperties);
-		allocInfo.allocationSize = input.size;
+		allocInfo.allocationSize = std::max(requirements.size, input.size);
 
 		bufferData.bufferMemory = input.logicalDevice.allocateMemory(allocInfo);
 		input.logicalDevice.bindBufferMemory(bufferData.buffer, bufferData.bufferMemory, 0);
