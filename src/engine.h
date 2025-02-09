@@ -17,7 +17,11 @@ public:
 
 	void render(Scene* scene);
 
+	void renderImgui();
+
 private:
+	// TODO: Update variable/function naming conventions to be more organized and consistent
+
 	bool debugMode;
 
 	// glfw window params
@@ -46,10 +50,15 @@ private:
 	vk::Device device{ nullptr };
 	vk::Queue graphicsQueue{ nullptr };
 	vk::Queue presentQueue{ nullptr };
+	uint32_t graphicsQueueFamilyIdx;
+
+	// Swapchain
 	vk::SwapchainKHR swapchain;
 	std::vector<vkUtil::SwapchainFrame> swapchainFrames;
 	vk::Format swapchainFormat;
 	vk::Extent2D swapchainExtent;
+	uint32_t minImageCount;
+	uint32_t imageCount;
 
 
 	// general
@@ -74,6 +83,10 @@ private:
 	// assets
 	SceneData* sceneData;
 
+	// Imgui variables
+	vk::DescriptorPool imguiDescriptorPool;
+	vk::RenderPass imguiRenderPass;
+
 	// instance setup
 	void make_instance();
 
@@ -95,6 +108,12 @@ private:
 	void prepare_frame(const uint32_t imageIndex);
 
 	void record_draw_commands(vk::CommandBuffer commandBuffer, uint32_t imageIndex, Scene* scene);
+
+
+	// ImGui Helpers
+	void init_imgui();
+	void create_imgui_descriptor_pool();
+	void create_imgui_renderpass();
 
 	// cleanup
 	void cleanup_swapchain();

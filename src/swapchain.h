@@ -21,6 +21,8 @@ namespace vkInit
 		std::vector<vkUtil::SwapchainFrame> frames;
 		vk::Format format;
 		vk::Extent2D extent;
+		uint32_t minImageCount;
+		uint32_t imageCount;
 	};
 
 
@@ -275,6 +277,8 @@ namespace vkInit
 		bundle.format = format.format;
 		bundle.extent = extent;
 
+		bundle.minImageCount = support.capabilities.minImageCount;
+		bundle.imageCount = imageCount;
 
 		return bundle;
 	}

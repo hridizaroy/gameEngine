@@ -9,6 +9,11 @@
 #include "sync.h"
 #include "descriptors.h"
 
+// Imgui
+#include "imgui/imgui.h"
+#include "imgui/imgui_impl_glfw.h"
+#include "imgui/imgui_impl_vulkan.h"
+
 
 Engine::Engine(int width, int height, GLFWwindow* window, const char* appName, bool debugMode)
 {
@@ -73,6 +78,9 @@ void Engine::make_swapchain()
 	swapchainFormat = bundle.format;
 	swapchainExtent = bundle.extent;
 
+	minImageCount = bundle.minImageCount;
+	imageCount = bundle.imageCount;
+
 	maxFramesInFlight = static_cast<int>(swapchainFrames.size());
 }
 
@@ -99,6 +107,9 @@ void Engine::recreate_swapchain()
 	vkInit::commandBufferInputChunk commandBufferInput = { device, commandPool, swapchainFrames };
 	vkInit::make_frame_command_buffers(commandBufferInput, debugMode);
 
+	// update imgui imagecount
+	ImGui_ImplVulkan_SetMinImageCount(minImageCount);
+
 	// TODO: Identify potentially redundant steps in the following code
 	// Remove these lines if we don't want to make the render adapt to screen resizing
 	cleanup_pipeline();
@@ -117,6 +128,11 @@ void Engine::make_device()
 	std::array<vk::Queue, 2> queues = vkInit::get_queue(physicalDevice, device, surface, debugMode);
 	graphicsQueue = queues[0];
 	presentQueue = queues[1];
+
+	// Get queue family index
+	// Required for Imgui
+	// TODO: Reduce redundancy
+	graphicsQueueFamilyIdx = vkUtil::findQueueFamilies(physicalDevice, surface, debugMode).graphicsFamily.value();
 
 	make_swapchain();
 	
@@ -407,6 +423,16 @@ void Engine::record_draw_commands(vk::CommandBuffer commandBuffer, uint32_t imag
 	}
 }
 
+void Engine::renderImgui()
+{
+	// Start the Dear ImGui frame
+	ImGui_ImplVulkan_NewFrame();
+	ImGui_ImplGlfw_NewFrame();
+	ImGui::NewFrame();
+	ImGui::ShowDemoWindow();
+	ImGui::Render();
+}
+
 void Engine::render(Scene* scene)
 {
 	device.waitForFences(1, &swapchainFrames[frameNum].inFlight, VK_TRUE, UINT64_MAX);
@@ -476,6 +502,116 @@ void Engine::render(Scene* scene)
 	}
 
 	frameNum = (frameNum + 1) % maxFramesInFlight;
+}
+
+// TODO: Should this go in descriptors.h?
+void Engine::create_imgui_descriptor_pool()
+{
+	VkDescriptorPoolSize pool_sizes[] =
+	{
+		{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, IMGUI_IMPL_VULKAN_MINIMUM_IMAGE_SAMPLER_POOL_SIZE },
+	};
+	VkDescriptorPoolCreateInfo pool_info = {};
+	pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+	pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+	pool_info.maxSets = 0;
+	for (VkDescriptorPoolSize& pool_size : pool_sizes)
+		pool_info.maxSets += pool_size.descriptorCount;
+	pool_info.poolSizeCount = (uint32_t)IM_ARRAYSIZE(pool_sizes);
+	pool_info.pPoolSizes = pool_sizes;
+
+	imguiDescriptorPool = device.createDescriptorPool(pool_info);
+}
+
+
+// TODO: Should this be in pipeline.h?
+void Engine::create_imgui_renderpass()
+{
+	vk::AttachmentDescription attachment = {};
+	attachment.format = swapchainFormat;
+	attachment.samples = vk::SampleCountFlagBits::e1;
+	attachment.loadOp = vk::AttachmentLoadOp::eLoad;
+	attachment.storeOp = vk::AttachmentStoreOp::eStore;
+	attachment.stencilLoadOp = vk::AttachmentLoadOp::eDontCare;
+	attachment.stencilStoreOp = vk::AttachmentStoreOp::eDontCare;
+	attachment.initialLayout = vk::ImageLayout::eColorAttachmentOptimal;
+	attachment.finalLayout = vk::ImageLayout::ePresentSrcKHR;
+
+	vk::AttachmentReference color_attachment = {};
+	color_attachment.attachment = 0;
+	color_attachment.layout = vk::ImageLayout::eColorAttachmentOptimal;
+
+	vk::SubpassDescription subpass = {};
+	subpass.pipelineBindPoint = vk::PipelineBindPoint::eGraphics;
+	subpass.colorAttachmentCount = 1;
+	subpass.pColorAttachments = &color_attachment;
+
+	vk::SubpassDependency dependency = {};
+	dependency.srcSubpass = vk::SubpassExternal;
+	dependency.dstSubpass = 0;
+	dependency.srcStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput;	
+	dependency.dstStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput;
+	dependency.srcAccessMask = vk::AccessFlagBits::eNone;
+	dependency.dstAccessMask = vk::AccessFlagBits::eColorAttachmentWrite;
+
+	vk::RenderPassCreateInfo info = {};
+	info.flags = vk::RenderPassCreateFlags();
+	info.attachmentCount = 1;
+	info.pAttachments = &attachment;
+	info.subpassCount = 1;
+	info.pSubpasses = &subpass;
+	info.dependencyCount = 1;
+	info.pDependencies = &dependency;
+
+	try
+	{
+		imguiRenderPass = device.createRenderPass(info);
+	}
+	catch (vk::SystemError err)
+	{
+		if (debugMode)
+		{
+			std::cout << "Failed to create ImGui renderpass!" << std::endl;
+		}
+	}
+}
+
+void Engine::init_imgui()
+{
+	// Setup Dear ImGui context
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+	ImGuiIO& io = ImGui::GetIO();
+	//(void)io;
+	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
+	io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
+
+	// Setup Dear ImGui style
+	ImGui::StyleColorsDark();
+
+	create_imgui_descriptor_pool();
+
+	// Setup Platform/Renderer backends
+	ImGui_ImplGlfw_InitForVulkan(window, true);
+	ImGui_ImplVulkan_InitInfo init_info = {};
+	init_info.Instance = instance;
+	init_info.PhysicalDevice = physicalDevice;
+	init_info.Device = device;
+	init_info.QueueFamily = graphicsQueueFamilyIdx;
+	init_info.Queue = graphicsQueue;
+	init_info.PipelineCache = VK_NULL_HANDLE;
+	init_info.DescriptorPool = imguiDescriptorPool;
+	init_info.RenderPass = imguiRenderPass;
+	init_info.Subpass = 0;
+	init_info.MinImageCount = minImageCount;
+	init_info.ImageCount = imageCount;
+	init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
+	init_info.Allocator = nullptr;
+
+	// TODO: It's good practice to actually have our own error handling logic
+	// So we should probably add that at some point
+	init_info.CheckVkResultFn = nullptr;
+	ImGui_ImplVulkan_Init(&init_info);
 }
 
 void Engine::cleanup_swapchain()

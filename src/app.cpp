@@ -45,6 +45,7 @@ void App::run()
 	{
 		glfwPollEvents();
 		graphicsEngine->render(scene);
+		graphicsEngine->renderImgui();
 		calculateFrameRate();
 	}
 }
