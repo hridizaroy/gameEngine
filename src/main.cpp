@@ -2,7 +2,7 @@
 
 int main(int argc, char** argv)
 {
-	App* hridizaApp = new App(800, 600, true);
+	App* hridizaApp = new App(1800, 1000, true);
 
 	hridizaApp->run();
 	delete hridizaApp;

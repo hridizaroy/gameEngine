@@ -19,6 +19,9 @@ namespace vkUtil
 		vk::ImageView imageView;
 		vk::Framebuffer frameBuffer;
 
+		// imgui
+		vk::Framebuffer imguiFrameBuffer;
+
 		vk::CommandBuffer commandBuffer;
 
 		// sync-related variables

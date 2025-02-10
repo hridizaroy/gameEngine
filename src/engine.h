@@ -17,8 +17,6 @@ public:
 
 	void render(Scene* scene);
 
-	void renderImgui();
-
 private:
 	// TODO: Update variable/function naming conventions to be more organized and consistent
 
@@ -86,6 +84,10 @@ private:
 	// Imgui variables
 	vk::DescriptorPool imguiDescriptorPool;
 	vk::RenderPass imguiRenderPass;
+	// TODO: Make more efficient. Store as array?
+	std::vector<vk::CommandPool> imguiCommandPools;
+	vk::CommandPool imguiMainCommandPool;
+	std::vector<vk::CommandBuffer> imguiCommandBuffers;
 
 	// instance setup
 	void make_instance();
@@ -114,6 +116,8 @@ private:
 	void init_imgui();
 	void create_imgui_descriptor_pool();
 	void create_imgui_renderpass();
+	vk::CommandPool createImguiCommandPool(vk::CommandPoolCreateFlags flags);
+	std::vector<vk::CommandBuffer> createCommandBuffers(uint32_t commandBufferCount, vk::CommandPool& commandPool);
 
 	// cleanup
 	void cleanup_swapchain();

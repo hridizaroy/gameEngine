@@ -13,6 +13,7 @@
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_glfw.h"
 #include "imgui/imgui_impl_vulkan.h"
+#define APP_USE_VULKAN_DEBUG_REPORT
 
 
 Engine::Engine(int width, int height, GLFWwindow* window, const char* appName, bool debugMode)
@@ -84,6 +85,7 @@ void Engine::make_swapchain()
 	maxFramesInFlight = static_cast<int>(swapchainFrames.size());
 }
 
+// TODO: How to adapt this for Imgui?
 void Engine::recreate_swapchain()
 {
 	// if minimized, wait until our window is reopened
@@ -175,6 +177,9 @@ void Engine::make_framebuffers()
 	framebufferInput.renderpass = renderPass;
 	framebufferInput.swapchainExtent = swapchainExtent;
 
+	// imgui
+	framebufferInput.imguiRenderpass = imguiRenderPass;
+
 	vkInit::make_framebuffers(framebufferInput, swapchainFrames, debugMode);
 }
 
@@ -203,6 +208,9 @@ void Engine::make_frame_resources()
 
 void Engine::finalize_setup()
 {
+	// imgui
+	init_imgui();
+
 	make_framebuffers();
 
 	commandPool = vkInit::make_command_pool(device, physicalDevice, surface, debugMode);
@@ -355,7 +363,7 @@ void Engine::record_draw_commands(vk::CommandBuffer commandBuffer, uint32_t imag
 		for (glm::vec3& position : scene->trianglePositions)
 		{
 			glm::mat4 model = glm::translate(glm::mat4(1.0f), position);
-			vkUtil::ObjectData objectData;
+			vkUtil::ObjectData objectData{};
 			objectData.model = model;
 
 			commandBuffer.pushConstants(layout, vk::ShaderStageFlagBits::eVertex, 0, sizeof(objectData), &objectData);
@@ -423,16 +431,6 @@ void Engine::record_draw_commands(vk::CommandBuffer commandBuffer, uint32_t imag
 	}
 }
 
-void Engine::renderImgui()
-{
-	// Start the Dear ImGui frame
-	ImGui_ImplVulkan_NewFrame();
-	ImGui_ImplGlfw_NewFrame();
-	ImGui::NewFrame();
-	ImGui::ShowDemoWindow();
-	ImGui::Render();
-}
-
 void Engine::render(Scene* scene)
 {
 	device.waitForFences(1, &swapchainFrames[frameNum].inFlight, VK_TRUE, UINT64_MAX);
@@ -454,9 +452,54 @@ void Engine::render(Scene* scene)
 
 	vkResetCommandBuffer(commandBuffer, 0);
 
+	// imgui
+
+	// Start the Dear ImGui frame
+	ImGui_ImplVulkan_NewFrame();
+	ImGui_ImplGlfw_NewFrame();
+	ImGui::NewFrame();
+	ImGui::ShowDemoWindow();
+	ImGui::Begin("Another Window");
+	ImGui::Text("Hello from another window!");
+	ImGui::End();
+	ImGui::Render();
+
+	// Imgui
+	{
+		vkResetCommandPool(device, imguiMainCommandPool, 0);
+
+		vk::CommandBufferBeginInfo info{};
+		info.flags |= vk::CommandBufferUsageFlagBits::eOneTimeSubmit;
+
+		imguiCommandBuffers[frameNum].begin(info);
+	}
+	{
+		vk::RenderPassBeginInfo info{};
+		info.renderPass = imguiRenderPass;
+		info.framebuffer = swapchainFrames[imageIndex].imguiFrameBuffer;
+		info.renderArea.extent.width = swapchainExtent.width;
+		info.renderArea.extent.height = swapchainExtent.height;
+		info.clearValueCount = 1;
+
+		vk::ClearValue clearColor = { std::array<float, 4>{0.9f, 0.1f, 0.1f, 1.0f} };
+		info.pClearValues = &clearColor;
+
+		imguiCommandBuffers[frameNum].beginRenderPass(info, vk::SubpassContents::eInline);
+	}
+
+	// Record Imgui Draw Data and draw funcs into command buffer
+	ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), imguiCommandBuffers[frameNum]);
+	// Submit command buffer
+	vkCmdEndRenderPass(imguiCommandBuffers[frameNum]);
+	vkEndCommandBuffer(imguiCommandBuffers[frameNum]);
+
+
 	prepare_frame(imageIndex);
 
 	record_draw_commands(commandBuffer, imageIndex, scene);
+
+	std::array<VkCommandBuffer, 2> submitCommandBuffers =
+	{ commandBuffer, imguiCommandBuffers[imageIndex] };
 
 	VkSubmitInfo submitInfo{};
 
@@ -467,8 +510,10 @@ void Engine::render(Scene* scene)
 	submitInfo.waitSemaphoreCount = 1;
 	submitInfo.pWaitSemaphores = waitSemaphores;
 	submitInfo.pWaitDstStageMask = waitStages;
-	submitInfo.commandBufferCount = 1;
-	submitInfo.pCommandBuffers = &commandBuffer;
+	//submitInfo.commandBufferCount = 1;
+	submitInfo.commandBufferCount = static_cast<uint32_t>(submitCommandBuffers.size());
+	//submitInfo.pCommandBuffers = &commandBuffer;
+	submitInfo.pCommandBuffers = submitCommandBuffers.data();
 
 	VkSemaphore signalSemaphores[] = { swapchainFrames[frameNum].renderFinished };
 	submitInfo.signalSemaphoreCount = 1;
@@ -511,10 +556,12 @@ void Engine::create_imgui_descriptor_pool()
 	{
 		{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, IMGUI_IMPL_VULKAN_MINIMUM_IMAGE_SAMPLER_POOL_SIZE },
 	};
+
 	VkDescriptorPoolCreateInfo pool_info = {};
 	pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
 	pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
 	pool_info.maxSets = 0;
+
 	for (VkDescriptorPoolSize& pool_size : pool_sizes)
 		pool_info.maxSets += pool_size.descriptorCount;
 	pool_info.poolSizeCount = (uint32_t)IM_ARRAYSIZE(pool_sizes);
@@ -571,10 +618,44 @@ void Engine::create_imgui_renderpass()
 	{
 		if (debugMode)
 		{
-			std::cout << "Failed to create ImGui renderpass!" << std::endl;
+			std::cout << "Failed to create Imgui renderpass!" << std::endl;
 		}
 	}
 }
+
+// temporarily here
+vk::CommandPool Engine::createImguiCommandPool(vk::CommandPoolCreateFlags flags)
+{
+	vk::CommandPoolCreateInfo commandPoolCreateInfo {};
+	commandPoolCreateInfo.flags = flags;
+	commandPoolCreateInfo.queueFamilyIndex = graphicsQueueFamilyIdx;
+
+	try
+	{
+		return device.createCommandPool(commandPoolCreateInfo);
+	}
+	catch (vk::SystemError err)
+	{
+		if (debugMode)
+		{
+			std::cout << "Failed to create Imgui Command Pool :/" << std::endl;
+		}
+
+		return nullptr;
+	}
+}
+
+std::vector<vk::CommandBuffer> Engine::createCommandBuffers(uint32_t commandBufferCount, vk::CommandPool& commandPool)
+{
+	vk::CommandBufferAllocateInfo commandBufferAllocateInfo {};
+	commandBufferAllocateInfo.level = vk::CommandBufferLevel::ePrimary;
+	commandBufferAllocateInfo.commandPool = commandPool;
+	commandBufferAllocateInfo.commandBufferCount = commandBufferCount;
+
+	return device.allocateCommandBuffers(commandBufferAllocateInfo);
+}
+
+
 
 void Engine::init_imgui()
 {
@@ -582,14 +663,20 @@ void Engine::init_imgui()
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
 	ImGuiIO& io = ImGui::GetIO();
-	//(void)io;
+	(void)io;
 	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
 	io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
 
 	// Setup Dear ImGui style
 	ImGui::StyleColorsDark();
 
+	// Command pool and buffers
+	imguiMainCommandPool = createImguiCommandPool(vk::CommandPoolCreateFlagBits::eResetCommandBuffer);
+	imguiCommandBuffers.resize(imageCount);
+	imguiCommandBuffers = createCommandBuffers(imageCount, imguiMainCommandPool);
+
 	create_imgui_descriptor_pool();
+	create_imgui_renderpass();
 
 	// Setup Platform/Renderer backends
 	ImGui_ImplGlfw_InitForVulkan(window, true);
@@ -612,6 +699,8 @@ void Engine::init_imgui()
 	// So we should probably add that at some point
 	init_info.CheckVkResultFn = nullptr;
 	ImGui_ImplVulkan_Init(&init_info);
+
+	create_imgui_renderpass();
 }
 
 void Engine::cleanup_swapchain()
