@@ -204,6 +204,8 @@ void Engine::make_assets()
 {
 	sceneData = new SceneData();
 
+	std::vector<REntity> rasterEntities = std::vector<REntity>();
+
 	std::vector<float> vertexData = {
 		1.0f, 0.0f, 1.0f, 1.0f, 0.0f, -0.05f, 0.0f,
 		1.0f, 0.0f, 1.0f, 1.0f, 0.05f, 0.05f, 0.0f,
@@ -212,41 +214,41 @@ void Engine::make_assets()
 
 	sceneData->consume(MeshType::TRIANGLE, vertexData);
 
-	vertexData = {
-		0.0f, 1.0f, 0.0f, 1.0f, -0.55f, -0.6f, +0.0f,
-		0.0f, 1.0f, 0.0f, 1.0f, -0.75f, -0.7f, +0.0f,
-		0.0f, 1.0f, 0.0f, 1.0f, -0.6f, -0.65f, +0.0f,
-
-		0.0f, 1.0f, 0.0f, 1.0f, -0.55f, -0.6f, +0.0f,
-		0.0f, 1.0f, 0.0f, 1.0f, -0.9f, -0.5f, +0.0f,
-		0.0f, 1.0f, 0.0f, 1.0f, -0.75f, -0.7f, +0.0f,
-
-		0.0f, 1.0f, 0.0f, 1.0f, -0.55f, -0.6f, +0.0f,
-		0.0f, 1.0f, 0.0f, 1.0f, -0.8f, +0.9f, +0.0f,
-		0.0f, 1.0f, 0.0f, 1.0f, -0.9f, -0.5f, +0.0f
-	};
-
-	sceneData->consume(MeshType::PENTAGON, vertexData);
-
-	vertexData = {
-		1.0f, 0.0f, 0.0f, 1.0f, +0.8f, +0.9f, +0.0f,
-		1.0f, 0.0f, 0.0f, 1.0f, +0.75f, -0.7f, +0.0f,
-		1.0f, 0.0f, 0.0f, 1.0f, +0.9f, -0.5f, +0.0f,
-
-		1.0f, 0.0f, 0.0f, 1.0f, +0.8f, +0.9f, +0.0f,
-		1.0f, 0.0f, 0.0f, 1.0f, +0.6f, -0.65f, +0.0f,
-		1.0f, 0.0f, 0.0f, 1.0f, +0.75f, -0.7f, +0.0f,
-
-		1.0f, 0.0f, 0.0f, 1.0f, +0.8f, +0.9f, +0.0f,
-		1.0f, 0.0f, 0.0f, 1.0f, +0.55f, -0.6f, +0.0f,
-		1.0f, 0.0f, 0.0f, 1.0f, +0.6f, -0.65f, +0.0f,
-
-		1.0f, 0.0f, 0.0f, 1.0f, +0.8f, +0.9f, +0.0f,
-		1.0f, 0.0f, 0.0f, 1.0f, +0.7f, +0.85f, +0.0f,
-		1.0f, 0.0f, 0.0f, 1.0f, +0.55f, -0.6f, +0.0f
-	};
-
-	sceneData->consume(MeshType::HEXAGON, vertexData);
+	//vertexData = {
+	//	0.0f, 1.0f, 0.0f, 1.0f, -0.55f, -0.6f, +0.0f,
+	//	0.0f, 1.0f, 0.0f, 1.0f, -0.75f, -0.7f, +0.0f,
+	//	0.0f, 1.0f, 0.0f, 1.0f, -0.6f, -0.65f, +0.0f,
+	//
+	//	0.0f, 1.0f, 0.0f, 1.0f, -0.55f, -0.6f, +0.0f,
+	//	0.0f, 1.0f, 0.0f, 1.0f, -0.9f, -0.5f, +0.0f,
+	//	0.0f, 1.0f, 0.0f, 1.0f, -0.75f, -0.7f, +0.0f,
+	//
+	//	0.0f, 1.0f, 0.0f, 1.0f, -0.55f, -0.6f, +0.0f,
+	//	0.0f, 1.0f, 0.0f, 1.0f, -0.8f, +0.9f, +0.0f,
+	//	0.0f, 1.0f, 0.0f, 1.0f, -0.9f, -0.5f, +0.0f
+	//};
+	//
+	//sceneData->consume(MeshType::PENTAGON, vertexData);
+	//
+	//vertexData = {
+	//	1.0f, 0.0f, 0.0f, 1.0f, +0.8f, +0.9f, +0.0f,
+	//	1.0f, 0.0f, 0.0f, 1.0f, +0.75f, -0.7f, +0.0f,
+	//	1.0f, 0.0f, 0.0f, 1.0f, +0.9f, -0.5f, +0.0f,
+	//
+	//	1.0f, 0.0f, 0.0f, 1.0f, +0.8f, +0.9f, +0.0f,
+	//	1.0f, 0.0f, 0.0f, 1.0f, +0.6f, -0.65f, +0.0f,
+	//	1.0f, 0.0f, 0.0f, 1.0f, +0.75f, -0.7f, +0.0f,
+	//
+	//	1.0f, 0.0f, 0.0f, 1.0f, +0.8f, +0.9f, +0.0f,
+	//	1.0f, 0.0f, 0.0f, 1.0f, +0.55f, -0.6f, +0.0f,
+	//	1.0f, 0.0f, 0.0f, 1.0f, +0.6f, -0.65f, +0.0f,
+	//
+	//	1.0f, 0.0f, 0.0f, 1.0f, +0.8f, +0.9f, +0.0f,
+	//	1.0f, 0.0f, 0.0f, 1.0f, +0.7f, +0.85f, +0.0f,
+	//	1.0f, 0.0f, 0.0f, 1.0f, +0.55f, -0.6f, +0.0f
+	//};
+	//
+	//sceneData->consume(MeshType::HEXAGON, vertexData);
 
 	FinalizationChunk finalizationChunk{device, physicalDevice, graphicsQueue, mainCommandBuffer};
 	sceneData->finalize(finalizationChunk);
@@ -336,54 +338,70 @@ void Engine::record_draw_commands(vk::CommandBuffer commandBuffer, uint32_t imag
 
 	if (vertexCount != 0)
 	{
-		for (glm::vec3& position : scene->trianglePositions)
+		// Draw rasterized entities 
+		for (REntity entity : scene->entities)
 		{
-			glm::mat4 model = glm::translate(glm::mat4(1.0f), position);
+			// glm::translate(glm::mat4(1.0f), entity.info->transform->GetPosition());
+			glm::mat4 model = entity.info->transform->GetWorldMatrix();
 			vkUtil::ObjectData objectData;
 			objectData.model = model;
 
-			commandBuffer.pushConstants(layout, vk::ShaderStageFlagBits::eVertex, 0, sizeof(objectData), &objectData);
-			commandBuffer.draw(static_cast<uint32_t>(vertexCount), 1, static_cast<uint32_t>(offset), 0);
+			commandBuffer.pushConstants(layout, vk::ShaderStageFlagBits::eVertex, 0, sizeof(objectData), &objectData); 
+			commandBuffer.draw(static_cast<uint32_t>(vertexCount), 1, static_cast<uint32_t>(offset), 0); 
+
 		}
 	}
 
-	// Pentagon
-	offset_size = sceneData->lookupOffsetSize(MeshType::PENTAGON);
-
-	offset = offset_size.first;
-	vertexCount = offset_size.second;
-
-	if (vertexCount != 0)
-	{
-		for (glm::vec3& position : scene->pentagonPositions)
-		{
-			glm::mat4 model = glm::translate(glm::mat4(1.0f), position);
-			vkUtil::ObjectData objectData;
-			objectData.model = model;
-
-			commandBuffer.pushConstants(layout, vk::ShaderStageFlagBits::eVertex, 0, sizeof(objectData), &objectData);
-			commandBuffer.draw(static_cast<uint32_t>(vertexCount), 1, static_cast<uint32_t>(offset), 0);
-		}
-	}
-
-	// Hexagon
-	offset_size = sceneData->lookupOffsetSize(MeshType::HEXAGON);
-
-	offset = offset_size.first;
-	vertexCount = offset_size.second;
-
-	if (vertexCount != 0)
-	{
-		for (glm::vec3& position : scene->hexagonPositions)
-		{
-			glm::mat4 model = glm::translate(glm::mat4(1.0f), position);
-			vkUtil::ObjectData objectData;
-			objectData.model = model;
-
-			commandBuffer.pushConstants(layout, vk::ShaderStageFlagBits::eVertex, 0, sizeof(objectData), &objectData);
-			commandBuffer.draw(static_cast<uint32_t>(vertexCount), 1, static_cast<uint32_t>(offset), 0);
-		}
-	}
+	//if (vertexCount != 0)
+	//{
+	//	for (glm::vec3& position : scene->trianglePositions)
+	//	{
+	//		glm::mat4 model = glm::translate(glm::mat4(1.0f), position);
+	//		vkUtil::ObjectData objectData;
+	//		objectData.model = model;
+	//
+	//		commandBuffer.pushConstants(layout, vk::ShaderStageFlagBits::eVertex, 0, sizeof(objectData), &objectData);
+	//		commandBuffer.draw(static_cast<uint32_t>(vertexCount), 1, static_cast<uint32_t>(offset), 0);
+	//	}
+	//}
+	//
+	//// Pentagon
+	//offset_size = sceneData->lookupOffsetSize(MeshType::PENTAGON);
+	//
+	//offset = offset_size.first;
+	//vertexCount = offset_size.second;
+	//
+	//if (vertexCount != 0)
+	//{
+	//	for (glm::vec3& position : scene->pentagonPositions)
+	//	{
+	//		glm::mat4 model = glm::translate(glm::mat4(1.0f), position);
+	//		vkUtil::ObjectData objectData;
+	//		objectData.model = model;
+	//
+	//		commandBuffer.pushConstants(layout, vk::ShaderStageFlagBits::eVertex, 0, sizeof(objectData), &objectData);
+	//		commandBuffer.draw(static_cast<uint32_t>(vertexCount), 1, static_cast<uint32_t>(offset), 0);
+	//	}
+	//}
+	//
+	//// Hexagon
+	//offset_size = sceneData->lookupOffsetSize(MeshType::HEXAGON);
+	//
+	//offset = offset_size.first;
+	//vertexCount = offset_size.second;
+	//
+	//if (vertexCount != 0)
+	//{
+	//	for (glm::vec3& position : scene->hexagonPositions)
+	//	{
+	//		glm::mat4 model = glm::translate(glm::mat4(1.0f), position);
+	//		vkUtil::ObjectData objectData;
+	//		objectData.model = model;
+	//
+	//		commandBuffer.pushConstants(layout, vk::ShaderStageFlagBits::eVertex, 0, sizeof(objectData), &objectData);
+	//		commandBuffer.draw(static_cast<uint32_t>(vertexCount), 1, static_cast<uint32_t>(offset), 0);
+	//	}
+	//}
 
 	/*glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(1.0f, 1.0f, 1.0f));
 	vkUtil::ObjectData objectData;

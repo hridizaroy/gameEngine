@@ -8,6 +8,9 @@
 
 #include "SceneData.h"
 
+#include "Entity.h"
+#include "Mesh.h"
+
 class Engine
 {
 public:

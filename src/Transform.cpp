@@ -12,6 +12,7 @@ Transform::Transform() :
 	dirIsDirty = true;
 
 	CleanVectors();
+	CleanMatrices();
 }
 
 #pragma region HELPERS
@@ -22,12 +23,12 @@ void Transform::CleanMatrices()
 	if (matIsDirty)
 	{
 		// Get each of parts that represent the world matrix 
-		glm::mat4x4 pos = glm::translate(glm::mat4x4(), position);
-		glm::mat4x4 rot = glm::rotate(pos, quatRot.w, glm::vec3(quatRot.x, quatRot.y, quatRot.z));
-		glm::mat4x4 sca = glm::scale(rot, scale);
+		glm::mat4x4 pos = glm::translate(glm::mat4(1.0f), position);
+		glm::mat4x4 rot = glm::rotate(glm::mat4(1.0f), quatRot.w, glm::vec3(quatRot.x, quatRot.y, quatRot.z));
+		glm::mat4x4 sca = glm::scale(glm::mat4(1.0f), scale);
 
 		// Final results set here 
-		worldMatrix = sca;
+		worldMatrix = sca * rot * pos;
 		worldInverseTransposeMatrix = glm::inverse(glm::transpose(worldMatrix));
 
 		matIsDirty = false;

@@ -13,8 +13,8 @@ include_directories(
 add_executable (gameEngine "engine.cpp" "engine.h" "main.cpp" "instance.h"
 				"config.h" "logging.h" "device.h" "queue_families.h"
 				"frame.h" "shaders.h" "pipeline.h" "app.h" "app.cpp"
-				"render_structs.h" "scene.h" "scene.cpp" "commands.h" "swapchain.h"
-				"framebuffer.h" "sync.h" "mesh.h" "buffers.h" "buffers.cpp"
+				"render_structs.h" "scene.h" "scene.cpp" "commands.h" "swapchain.h" "Material.h" "Mesh.h" "Entity.h" "Transform.cpp" "Transform.h"
+				"framebuffer.h" "sync.h" "meshUniforms.h" "buffers.h" "buffers.cpp"
 				"SceneData.h" "SceneData.cpp" "descriptors.h")
 
 target_link_libraries(gameEngine 
