@@ -8,7 +8,8 @@ layout(binding = 0) uniform UBO
 } camData;
 
 layout(location = 0) in vec4 vertexColor;
-layout(location = 1) in vec3 vertexPosition;
+layout(location = 1) in vec4 vertexPosition;
+layout(location = 2) in vec2 uv;
 
 layout(push_constant) uniform constants
 {
@@ -19,6 +20,7 @@ layout(location = 0) out vec4 fragColor;
 
 void main()
 {
-	gl_Position = camData.viewProjection * ObjectData.model * vec4(vertexPosition, 1.0);
+// camData.viewProjection * ObjectData.model * 
+	gl_Position = vertexPosition;
 	fragColor = vertexColor;
 }

@@ -206,14 +206,44 @@ void Engine::make_assets()
 
 	std::vector<REntity> rasterEntities = std::vector<REntity>();
 
+	// Color, Position 
 	std::vector<float> vertexData = {
-		1.0f, 0.0f, 1.0f, 1.0f, 0.0f, -0.05f, 0.0f,
-		1.0f, 0.0f, 1.0f, 1.0f, 0.05f, 0.05f, 0.0f,
-		1.0f, 0.0f, 1.0f, 1.0f, -0.05f, 0.05f, 0.0f
+		1.0f, 0.0f, 1.0f, 1.0f, 
+		0.0f, -0.05f,  0.0f,  1.0f,
+		0.0, 0.0,
+		
+		1.0f, 0.0f, 1.0f, 1.0f, 
+		0.05f, 0.05f, 0.0f, 1.0f,
+		0.0, 0.0,
+
+		1.0f, 0.0f, 1.0f, 1.0f, 
+		-0.05f, 0.05f, 0.0f, 1.0f, 
+		0.0, 0.0,
+
 	};
 
 	sceneData->consume(MeshType::TRIANGLE, vertexData);
 
+
+	vertexData =
+	{
+		 1.0f,  1.0f,  1.0f,  1.0f, // Color
+		-1.0f,  1.0f,  0.0f,  1.0f,	// Position
+		 0.0f,  0.0f,				// UV
+
+		 1.0f,  1.0f,  1.0f,  1.0f, // Color
+		-1.0f, -3.0f,  0.0f,  1.0f,	// Position
+		 0.0f,  2.0f,				// UV
+
+		 1.0f,  1.0f,  1.0f,  1.0f, // Color
+		 3.0f,  1.0f,  0.0f,  1.0f,	// Position
+		 2.0f,  0.0f,				// UV
+
+		
+	};
+
+	sceneData->consume(MeshType::TRIANGLE_FULLSCREEN, vertexData);
+	
 	//vertexData = {
 	//	0.0f, 1.0f, 0.0f, 1.0f, -0.55f, -0.6f, +0.0f,
 	//	0.0f, 1.0f, 0.0f, 1.0f, -0.75f, -0.7f, +0.0f,
@@ -331,25 +361,31 @@ void Engine::record_draw_commands(vk::CommandBuffer commandBuffer, uint32_t imag
 	prepare_scene(commandBuffer);
 
 	// Triangle
-	std::pair<size_t, size_t> offset_size = sceneData->lookupOffsetSize(MeshType::TRIANGLE);
+	//std::pair<size_t, size_t> offset_size = sceneData->lookupOffsetSize(MeshType::TRIANGLE);
 
-	size_t offset = offset_size.first;
-	size_t vertexCount = offset_size.second;
 
-	if (vertexCount != 0)
+	
+
+	// Draw rasterized entities 
+	for (REntity entity : scene->entities)
 	{
-		// Draw rasterized entities 
-		for (REntity entity : scene->entities)
-		{
-			// glm::translate(glm::mat4(1.0f), entity.info->transform->GetPosition());
-			glm::mat4 model = entity.info->transform->GetWorldMatrix();
-			vkUtil::ObjectData objectData;
-			objectData.model = model;
+		std::pair<size_t, size_t> offset_size = sceneData->lookupOffsetSize(entity.meshType);
 
-			commandBuffer.pushConstants(layout, vk::ShaderStageFlagBits::eVertex, 0, sizeof(objectData), &objectData); 
-			commandBuffer.draw(static_cast<uint32_t>(vertexCount), 1, static_cast<uint32_t>(offset), 0); 
+		size_t offset = offset_size.first;
+		size_t vertexCount = offset_size.second;
 
-		}
+		if (vertexCount == 0)
+			continue;
+
+
+		// glm::translate(glm::mat4(1.0f), entity.info->transform->GetPosition());
+		glm::mat4 model = entity.info->transform->GetWorldMatrix();
+		vkUtil::ObjectData objectData;
+		objectData.model = model;
+
+		commandBuffer.pushConstants(layout, vk::ShaderStageFlagBits::eVertex, 0, sizeof(objectData), &objectData); 
+		commandBuffer.draw(static_cast<uint32_t>(vertexCount), 1, static_cast<uint32_t>(offset), 0); 
+
 	}
 
 	//if (vertexCount != 0)

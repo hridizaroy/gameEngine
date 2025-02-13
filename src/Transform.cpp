@@ -40,15 +40,10 @@ void Transform::CleanVectors()
 	if (!dirIsDirty)
 		return;
 
-	//DirectX::XMVECTOR rotQuat = DirectX::XMQuaternionRotationRollPitchYawFromVector(DirectX::XMLoadFloat3(&eulerRotation));
 	right = QuatRot(quatRot, glm::vec3(1.0, 0.0, 0.0));
 	up = QuatRot(quatRot, glm::vec3(0.0, 1.0, 0.0));
 	forward = QuatRot(quatRot, glm::vec3(0.0, 0.0, 1.0));
 	
-	//DirectX::XMStoreFloat3(&right, DirectX::XMVector3Rotate(DirectX::XMVectorSet(1, 0, 0, 0), rotQuat));
-	//DirectX::XMStoreFloat3(&up, DirectX::XMVector3Rotate(DirectX::XMVectorSet(0, 1, 0, 0), rotQuat));
-	//DirectX::XMStoreFloat3(&forward, DirectX::XMVector3Rotate(DirectX::XMVectorSet(0, 0, 1, 0), rotQuat));
-
 	dirIsDirty = false;
 }
 #pragma endregion 
