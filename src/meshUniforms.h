@@ -29,14 +29,14 @@ namespace vkMesh
 		// Position
 		vk::VertexInputAttributeDescription posDesc{};
 		posDesc.binding = binding;
-		posDesc.format = vk::Format::eR32G32B32Sfloat;
+		posDesc.format = vk::Format::eR32G32B32A32Sfloat;
 		posDesc.location = 1;
 		posDesc.offset = sizeof(float) * 4;
 
 		// UV
 		vk::VertexInputAttributeDescription uvDesc{};
 		uvDesc.binding = binding;
-		uvDesc.format = vk::Format::eR32G32B32Sfloat;
+		uvDesc.format = vk::Format::eR32G32Sfloat;
 		uvDesc.location = 2;
 		uvDesc.offset = sizeof(float) * (8);
 

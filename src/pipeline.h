@@ -128,7 +128,7 @@ namespace vkInit
 		vertexInputInfo.pVertexAttributeDescriptions = attrDesc.data();
 
 		pipelineInfo.pVertexInputState = &vertexInputInfo;
-
+		
 		// Input Assembly
 		vk::PipelineInputAssemblyStateCreateInfo inputAssemblyInfo = {};
 		inputAssemblyInfo.flags = vk::PipelineInputAssemblyStateCreateFlags();

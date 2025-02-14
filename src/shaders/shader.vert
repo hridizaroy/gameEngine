@@ -18,9 +18,18 @@ layout(push_constant) uniform constants
 
 layout(location = 0) out vec4 fragColor;
 
+#define width 800.0f
+#define height 600.0f
+
 void main()
 {
 // camData.viewProjection * ObjectData.model * 
 	gl_Position = vertexPosition;
 	fragColor = vertexColor;
+
+	vec2 uvN = 2.0 * uv - 1.0;
+    uvN = vec2(uvN.x, uvN.y * height / width);
+
+	fragColor = vec4(uvN, 0.0, 1.0);
+	//fragColor = vec4(uvN, 0.0, 1.0);
 }
