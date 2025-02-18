@@ -10,6 +10,9 @@ namespace vkInit
 		vk::Device device;
 		vk::CommandPool commandPool;
 		std::vector<vkUtil::SwapchainFrame>& frames;
+
+		// imgui
+		vk::CommandPool imguiCommandPool;
 	};
 
 
@@ -73,22 +76,29 @@ namespace vkInit
 		allocInfo.level = vk::CommandBufferLevel::ePrimary;
 		allocInfo.commandBufferCount = 1;
 
+		// imgui alloc info
+		vk::CommandBufferAllocateInfo imguiAllocInfo = {};
+		imguiAllocInfo.commandPool = inputChunk.imguiCommandPool;
+		imguiAllocInfo.level = vk::CommandBufferLevel::ePrimary;
+		imguiAllocInfo.commandBufferCount = 1;
+
 		for (int ii = 0; ii < inputChunk.frames.size(); ii++)
 		{
 			try
 			{
 				inputChunk.frames[ii].commandBuffer = inputChunk.device.allocateCommandBuffers(allocInfo)[0];
+				inputChunk.frames[ii].imguiCommandBuffer = inputChunk.device.allocateCommandBuffers(imguiAllocInfo)[0];
 
 				if (debug)
 				{
-					std::cout << "Allocated command buffer for frame " << ii << std::endl;
+					std::cout << "Allocated command buffers for frame " << ii << std::endl;
 				}
 			}
 			catch (vk::SystemError err)
 			{
 				if (debug)
 				{
-					std::cout << "Failed to allocate command buffer for frame " << ii << std::endl;
+					std::cout << "Failed to allocate command buffers for frame " << ii << std::endl;
 				}
 			}
 		}

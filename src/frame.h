@@ -19,10 +19,11 @@ namespace vkUtil
 		vk::ImageView imageView;
 		vk::Framebuffer frameBuffer;
 
+		vk::CommandBuffer commandBuffer;
+
 		// imgui
 		vk::Framebuffer imguiFrameBuffer;
-
-		vk::CommandBuffer commandBuffer;
+		vk::CommandBuffer imguiCommandBuffer;
 
 		// sync-related variables
 		vk::Semaphore imageAvailable, renderFinished;
@@ -32,12 +33,15 @@ namespace vkUtil
 		UBOData camData;
 		BufferData camDataBuffer;
 		void* camDataWriteLocation;
+		std::vector<glm::mat4> modelTransforms;
+		BufferData modelBuffer;
+		void* modelBufferWriteLocation;
 
 		// resource descriptors
 		vk::DescriptorBufferInfo uniformBufferDescriptor;
 		vk::DescriptorSet descriptorSet;
 
-		void make_UBO_resources(const vk::Device& logicalDevice,
+		void make_descriptor_resources(const vk::Device& logicalDevice,
 			vk::PhysicalDevice& physicalDevice)
 		{
 			vkUtil::BufferInput input;

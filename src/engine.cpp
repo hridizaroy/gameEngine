@@ -106,11 +106,11 @@ void Engine::recreate_swapchain()
 	make_framebuffers();
 	make_frame_resources();
 
-	vkInit::commandBufferInputChunk commandBufferInput = { device, commandPool, swapchainFrames };
+	vkInit::commandBufferInputChunk commandBufferInput = { device, commandPool, swapchainFrames, imguiMainCommandPool };
 	vkInit::make_frame_command_buffers(commandBufferInput, debugMode);
 
 	// update imgui imagecount
-	ImGui_ImplVulkan_SetMinImageCount(minImageCount);
+	ImGui_ImplVulkan_SetMinImageCount(std::max(minImageCount, static_cast<uint32_t>(2)));
 
 	// TODO: Identify potentially redundant steps in the following code
 	// Remove these lines if we don't want to make the render adapt to screen resizing
@@ -144,11 +144,24 @@ void Engine::make_device()
 void Engine::make_descriptor_set_layout()
 {
 	vkInit::DescriptorSetLayoutData bindings{};
+	//bindings.count = 2;
 	bindings.count = 1;
+
+	// Uniform buffer
 	bindings.indices.push_back(0);
 	bindings.types.push_back(vk::DescriptorType::eUniformBuffer);
 	bindings.counts.push_back(1);
 	bindings.stages.push_back(vk::ShaderStageFlagBits::eVertex);
+
+	// Storage buffer
+	//bindings.indices.push_back(1);
+	//bindings.types.push_back(vk::DescriptorType::eStorageBuffer);
+	//bindings.counts.push_back(1);
+	//bindings.stages.push_back(vk::ShaderStageFlagBits::eVertex);
+
+
+	// Since storage buffer and uniform buffer are used with the same frequency,
+	// we are binding them to the same descriptor set
 
 	descriptorSetLayout = vkInit::make_descriptor_set_layout(device, bindings);
 }
@@ -168,6 +181,9 @@ void Engine::make_pipeline()
 	layout = output.layout;
 	renderPass = output.renderpass;
 	pipeline = output.pipeline;
+
+	// imgui renderpass
+	create_imgui_renderpass();
 }
 
 void Engine::make_framebuffers()
@@ -199,7 +215,7 @@ void Engine::make_frame_resources()
 		frame.renderFinished = vkInit::make_semaphore(device, debugMode);
 		frame.inFlight = vkInit::make_fence(device, debugMode);
 
-		frame.make_UBO_resources(device, physicalDevice);
+		frame.make_descriptor_resources(device, physicalDevice);
 
 		frame.descriptorSet = vkInit::allocate_descriptor_set(
 			device, descriptorPool, descriptorSetLayout);
@@ -215,7 +231,7 @@ void Engine::finalize_setup()
 
 	commandPool = vkInit::make_command_pool(device, physicalDevice, surface, debugMode);
 
-	vkInit::commandBufferInputChunk commandBufferInput = { device, commandPool, swapchainFrames };
+	vkInit::commandBufferInputChunk commandBufferInput = { device, commandPool, swapchainFrames, imguiMainCommandPool };
 	mainCommandBuffer = vkInit::make_main_command_buffer(commandBufferInput, debugMode);
 	vkInit::make_frame_command_buffers(commandBufferInput, debugMode);
 
@@ -278,14 +294,14 @@ void Engine::make_assets()
 
 void Engine::prepare_frame(const uint32_t imageIndex)
 {
-	glm::vec3 eye{ 1.0f, 0.0f, -1.0f };
+	glm::vec3 eye{ 0.0f, 0.0f, 2.0f };
 	glm::vec3 center{ 0.0f, 0.0f, 0.0f };
-	glm::vec3 up{ 0.0f, 0.0f, -1.0f };
-	glm::mat4 view{ glm::lookAt(eye, center, up) };
+	glm::vec3 up{ 0.0f, 0.0f, 1.0f };
+	glm::mat4 view{ glm::lookAtRH(eye, center, up) };
 
-	glm::mat4 projection = glm::perspective(
+	glm::mat4 projection = glm::perspectiveRH(
 		glm::radians(45.0f),
-		static_cast<float>(swapchainExtent.width) / static_cast<float>(swapchainExtent.height),
+		static_cast<float>(swapchainExtent.height) / static_cast<float>(swapchainExtent.width),
 		0.1f, 10.0f
 	);
 
@@ -466,12 +482,12 @@ void Engine::render(Scene* scene)
 
 	// Imgui
 	{
-		vkResetCommandPool(device, imguiMainCommandPool, 0);
+		vkResetCommandBuffer(swapchainFrames[frameNum].imguiCommandBuffer, 0);
 
 		vk::CommandBufferBeginInfo info{};
 		info.flags |= vk::CommandBufferUsageFlagBits::eOneTimeSubmit;
 
-		imguiCommandBuffers[frameNum].begin(info);
+		swapchainFrames[frameNum].imguiCommandBuffer.begin(info);
 	}
 	{
 		vk::RenderPassBeginInfo info{};
@@ -484,14 +500,14 @@ void Engine::render(Scene* scene)
 		vk::ClearValue clearColor = { std::array<float, 4>{0.9f, 0.1f, 0.1f, 1.0f} };
 		info.pClearValues = &clearColor;
 
-		imguiCommandBuffers[frameNum].beginRenderPass(info, vk::SubpassContents::eInline);
+		swapchainFrames[frameNum].imguiCommandBuffer.beginRenderPass(info, vk::SubpassContents::eInline);
 	}
 
 	// Record Imgui Draw Data and draw funcs into command buffer
-	ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), imguiCommandBuffers[frameNum]);
+	ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), swapchainFrames[frameNum].imguiCommandBuffer);
 	// Submit command buffer
-	vkCmdEndRenderPass(imguiCommandBuffers[frameNum]);
-	vkEndCommandBuffer(imguiCommandBuffers[frameNum]);
+	vkCmdEndRenderPass(swapchainFrames[frameNum].imguiCommandBuffer);
+	vkEndCommandBuffer(swapchainFrames[frameNum].imguiCommandBuffer);
 
 
 	prepare_frame(imageIndex);
@@ -499,7 +515,7 @@ void Engine::render(Scene* scene)
 	record_draw_commands(commandBuffer, imageIndex, scene);
 
 	std::array<VkCommandBuffer, 2> submitCommandBuffers =
-	{ commandBuffer, imguiCommandBuffers[imageIndex] };
+	{ commandBuffer, swapchainFrames[imageIndex].imguiCommandBuffer };
 
 	VkSubmitInfo submitInfo{};
 
@@ -672,11 +688,8 @@ void Engine::init_imgui()
 
 	// Command pool and buffers
 	imguiMainCommandPool = createImguiCommandPool(vk::CommandPoolCreateFlagBits::eResetCommandBuffer);
-	imguiCommandBuffers.resize(imageCount);
-	imguiCommandBuffers = createCommandBuffers(imageCount, imguiMainCommandPool);
 
 	create_imgui_descriptor_pool();
-	create_imgui_renderpass();
 
 	// Setup Platform/Renderer backends
 	ImGui_ImplGlfw_InitForVulkan(window, true);
@@ -690,7 +703,7 @@ void Engine::init_imgui()
 	init_info.DescriptorPool = imguiDescriptorPool;
 	init_info.RenderPass = imguiRenderPass;
 	init_info.Subpass = 0;
-	init_info.MinImageCount = minImageCount;
+	init_info.MinImageCount = std::max(minImageCount, static_cast<uint32_t>(2));
 	init_info.ImageCount = imageCount;
 	init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
 	init_info.Allocator = nullptr;
@@ -699,8 +712,17 @@ void Engine::init_imgui()
 	// So we should probably add that at some point
 	init_info.CheckVkResultFn = nullptr;
 	ImGui_ImplVulkan_Init(&init_info);
+}
 
-	create_imgui_renderpass();
+void Engine::cleanup_imgui()
+{
+	// Resources to destroy when the program ends
+	device.destroyCommandPool(imguiMainCommandPool);
+
+	ImGui_ImplVulkan_Shutdown();
+	ImGui_ImplGlfw_Shutdown();
+	ImGui::DestroyContext();
+	device.destroyDescriptorPool(imguiDescriptorPool);
 }
 
 void Engine::cleanup_swapchain()
@@ -709,6 +731,11 @@ void Engine::cleanup_swapchain()
 	{
 		device.destroyImageView(frame.imageView);
 		device.destroyFramebuffer(frame.frameBuffer);
+
+		// imgui
+		device.destroyFramebuffer(frame.imguiFrameBuffer);
+
+		//device.freeCommandBuffers(commandPool, 1, &frame.commandBuffer);
 
 		device.destroySemaphore(frame.imageAvailable);
 		device.destroySemaphore(frame.renderFinished);
@@ -722,6 +749,8 @@ void Engine::cleanup_swapchain()
 	device.destroySwapchainKHR(swapchain);
 
 	device.destroyDescriptorPool(descriptorPool);
+
+	cleanup_imgui();
 }
 
 void Engine::cleanup_pipeline()
@@ -729,6 +758,8 @@ void Engine::cleanup_pipeline()
 	device.destroyPipeline(pipeline);
 	device.destroyPipelineLayout(layout);
 	device.destroyRenderPass(renderPass);
+
+	device.destroyRenderPass(imguiRenderPass);
 }
 
 Engine::~Engine()
@@ -740,11 +771,11 @@ Engine::~Engine()
 		std::cout << "Bye!\n";
 	}
 
-	device.destroyCommandPool(commandPool);
-
 	cleanup_pipeline();
 
 	cleanup_swapchain();
+
+	device.destroyCommandPool(commandPool);
 
 	device.destroyDescriptorSetLayout(descriptorSetLayout);
 

@@ -7,6 +7,12 @@ layout(binding = 0) uniform UBO
 	mat4 viewProjection;
 } camData;
 
+// std140 enforces that the layout on the graphics card is the same as in C++
+// layout(std140, binding = 1) readonly buffer storageBuffer
+// {
+// 	mat4 model[];
+// } ObjectData;
+
 layout(location = 0) in vec4 vertexColor;
 layout(location = 1) in vec3 vertexPosition;
 

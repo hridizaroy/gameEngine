@@ -85,9 +85,7 @@ private:
 	vk::DescriptorPool imguiDescriptorPool;
 	vk::RenderPass imguiRenderPass;
 	// TODO: Make more efficient. Store as array?
-	std::vector<vk::CommandPool> imguiCommandPools;
 	vk::CommandPool imguiMainCommandPool;
-	std::vector<vk::CommandBuffer> imguiCommandBuffers;
 
 	// instance setup
 	void make_instance();
@@ -120,6 +118,7 @@ private:
 	std::vector<vk::CommandBuffer> createCommandBuffers(uint32_t commandBufferCount, vk::CommandPool& commandPool);
 
 	// cleanup
+	void cleanup_imgui();
 	void cleanup_swapchain();
 	void cleanup_pipeline();
 };
