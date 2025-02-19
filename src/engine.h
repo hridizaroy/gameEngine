@@ -105,7 +105,7 @@ private:
 
 	void make_assets();
 	void prepare_scene(const vk::CommandBuffer& commandBuffer);
-	void prepare_frame(const uint32_t imageIndex);
+	void prepare_frame(const uint32_t imageIndex, const Scene* scene);
 
 	void record_draw_commands(vk::CommandBuffer commandBuffer, uint32_t imageIndex, Scene* scene);
 

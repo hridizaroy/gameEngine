@@ -34,12 +34,7 @@ namespace vkInit
 		layoutInfo.pSetLayouts = &descriptorSetLayout;
 
 		// Push constants
-		layoutInfo.pushConstantRangeCount = 1;
-		vk::PushConstantRange pushConstantInfo;
-		pushConstantInfo.offset = 0;
-		pushConstantInfo.size = sizeof(vkUtil::ObjectData);
-		pushConstantInfo.stageFlags = vk::ShaderStageFlagBits::eVertex;
-		layoutInfo.pPushConstantRanges = &pushConstantInfo;
+		layoutInfo.pushConstantRangeCount = 0;
 
 		try
 		{

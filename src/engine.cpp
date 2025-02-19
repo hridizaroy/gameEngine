@@ -144,8 +144,11 @@ void Engine::make_device()
 void Engine::make_descriptor_set_layout()
 {
 	vkInit::DescriptorSetLayoutData bindings{};
-	//bindings.count = 2;
-	bindings.count = 1;
+	bindings.count = 2;
+	bindings.indices.reserve(bindings.count);
+	bindings.types.reserve(bindings.count);
+	bindings.counts.reserve(bindings.count);
+	bindings.stages.reserve(bindings.count);
 
 	// Uniform buffer
 	bindings.indices.push_back(0);
@@ -154,15 +157,14 @@ void Engine::make_descriptor_set_layout()
 	bindings.stages.push_back(vk::ShaderStageFlagBits::eVertex);
 
 	// Storage buffer
-	//bindings.indices.push_back(1);
-	//bindings.types.push_back(vk::DescriptorType::eStorageBuffer);
-	//bindings.counts.push_back(1);
-	//bindings.stages.push_back(vk::ShaderStageFlagBits::eVertex);
+	bindings.indices.push_back(1);
+	bindings.types.push_back(vk::DescriptorType::eStorageBuffer);
+	bindings.counts.push_back(1);
+	bindings.stages.push_back(vk::ShaderStageFlagBits::eVertex);
 
 
 	// Since storage buffer and uniform buffer are used with the same frequency,
 	// we are binding them to the same descriptor set
-
 	descriptorSetLayout = vkInit::make_descriptor_set_layout(device, bindings);
 }
 
@@ -202,8 +204,11 @@ void Engine::make_framebuffers()
 void Engine::make_frame_resources()
 {
 	vkInit::DescriptorSetLayoutData bindings{};
-	bindings.count = 1;
+	bindings.count = 2;
+	bindings.types.reserve(bindings.count);
+
 	bindings.types.push_back(vk::DescriptorType::eUniformBuffer);
+	bindings.types.push_back(vk::DescriptorType::eStorageBuffer);
 
 	descriptorPool = vkInit::make_descriptor_pool(device,
 		static_cast<uint32_t>(swapchainFrames.size()), bindings);
@@ -292,11 +297,14 @@ void Engine::make_assets()
 	sceneData->finalize(finalizationChunk);
 }
 
-void Engine::prepare_frame(const uint32_t imageIndex)
+void Engine::prepare_frame(const uint32_t imageIndex, const Scene* scene)
 {
-	glm::vec3 eye{ 0.0f, 0.0f, 2.0f };
+	vkUtil::SwapchainFrame& frame = swapchainFrames[imageIndex];
+
+	glm::vec3 eye{ 1.0f, 0.0f, -1.0f };
 	glm::vec3 center{ 0.0f, 0.0f, 0.0f };
-	glm::vec3 up{ 0.0f, 0.0f, 1.0f };
+	glm::vec3 up{ 0.0f, 0.0f, -1.0f };
+
 	glm::mat4 view{ glm::lookAtRH(eye, center, up) };
 
 	glm::mat4 projection = glm::perspectiveRH(
@@ -308,15 +316,33 @@ void Engine::prepare_frame(const uint32_t imageIndex)
 	projection[1][1] *= -1.0f;
 
 
-	swapchainFrames[imageIndex].camData.view = view;
-	swapchainFrames[imageIndex].camData.projection = projection;
-	swapchainFrames[imageIndex].camData.viewProjection = projection * view;
+	frame.camData.view = view;
+	frame.camData.projection = projection;
+	frame.camData.viewProjection = projection * view;
 
-	memcpy(swapchainFrames[imageIndex].camDataWriteLocation,
-		&(swapchainFrames[imageIndex].camData),
+	memcpy(frame.camDataWriteLocation,
+		&(frame.camData),
 		sizeof(vkUtil::UBOData));
 
-	swapchainFrames[imageIndex].fill_descriptor_set(device);
+	size_t ii = 0;
+	for (const glm::vec3& position : scene->trianglePositions)
+	{
+		frame.modelTransforms[ii++] = glm::translate(glm::mat4(), position);
+	}
+	for (const glm::vec3& position : scene->pentagonPositions)
+	{
+		frame.modelTransforms[ii++] = glm::translate(glm::mat4(), position);
+	}
+	for (const glm::vec3& position : scene->hexagonPositions)
+	{
+		frame.modelTransforms[ii++] = glm::translate(glm::mat4(), position);
+	}
+
+	memcpy(frame.modelBufferWriteLocation,
+		frame.modelTransforms.data(),
+		sizeof(glm::mat4) * ii);
+
+	frame.fill_descriptor_set(device);
 }
 
 void Engine::prepare_scene(const vk::CommandBuffer& commandBuffer)
@@ -371,66 +397,33 @@ void Engine::record_draw_commands(vk::CommandBuffer commandBuffer, uint32_t imag
 	// Triangle
 	std::pair<size_t, size_t> offset_size = sceneData->lookupOffsetSize(MeshType::TRIANGLE);
 
-	size_t offset = offset_size.first;
-	size_t vertexCount = offset_size.second;
+	uint32_t offset = static_cast<uint32_t>(offset_size.first);
+	uint32_t vertexCount = static_cast<uint32_t>(offset_size.second);
+	uint32_t startInstance = 0;
+	uint32_t instanceCount = static_cast<uint32_t>(scene->trianglePositions.size());
 
-	if (vertexCount != 0)
-	{
-		for (glm::vec3& position : scene->trianglePositions)
-		{
-			glm::mat4 model = glm::translate(glm::mat4(1.0f), position);
-			vkUtil::ObjectData objectData{};
-			objectData.model = model;
-
-			commandBuffer.pushConstants(layout, vk::ShaderStageFlagBits::eVertex, 0, sizeof(objectData), &objectData);
-			commandBuffer.draw(static_cast<uint32_t>(vertexCount), 1, static_cast<uint32_t>(offset), 0);
-		}
-	}
+	commandBuffer.draw(vertexCount, instanceCount, offset, startInstance);
+	startInstance += instanceCount;
 
 	// Pentagon
 	offset_size = sceneData->lookupOffsetSize(MeshType::PENTAGON);
 
 	offset = offset_size.first;
 	vertexCount = offset_size.second;
+	instanceCount = static_cast<uint32_t>(scene->pentagonPositions.size());
 
-	if (vertexCount != 0)
-	{
-		for (glm::vec3& position : scene->pentagonPositions)
-		{
-			glm::mat4 model = glm::translate(glm::mat4(1.0f), position);
-			vkUtil::ObjectData objectData;
-			objectData.model = model;
-
-			commandBuffer.pushConstants(layout, vk::ShaderStageFlagBits::eVertex, 0, sizeof(objectData), &objectData);
-			commandBuffer.draw(static_cast<uint32_t>(vertexCount), 1, static_cast<uint32_t>(offset), 0);
-		}
-	}
+	commandBuffer.draw(vertexCount, instanceCount, offset, startInstance);
+	startInstance += instanceCount;
 
 	// Hexagon
 	offset_size = sceneData->lookupOffsetSize(MeshType::HEXAGON);
 
 	offset = offset_size.first;
 	vertexCount = offset_size.second;
+	instanceCount = static_cast<uint32_t>(scene->hexagonPositions.size());
 
-	if (vertexCount != 0)
-	{
-		for (glm::vec3& position : scene->hexagonPositions)
-		{
-			glm::mat4 model = glm::translate(glm::mat4(1.0f), position);
-			vkUtil::ObjectData objectData;
-			objectData.model = model;
-
-			commandBuffer.pushConstants(layout, vk::ShaderStageFlagBits::eVertex, 0, sizeof(objectData), &objectData);
-			commandBuffer.draw(static_cast<uint32_t>(vertexCount), 1, static_cast<uint32_t>(offset), 0);
-		}
-	}
-
-	/*glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(1.0f, 1.0f, 1.0f));
-	vkUtil::ObjectData objectData;
-	objectData.model = model;
-	commandBuffer.pushConstants(layout, vk::ShaderStageFlagBits::eVertex, 0, sizeof(objectData), &objectData);
-
-	commandBuffer.draw(6, 1, 0, 0)*/;
+	commandBuffer.draw(vertexCount, instanceCount, offset, startInstance);
+	startInstance += instanceCount;
 
 	commandBuffer.endRenderPass();
 
@@ -510,7 +503,7 @@ void Engine::render(Scene* scene)
 	vkEndCommandBuffer(swapchainFrames[frameNum].imguiCommandBuffer);
 
 
-	prepare_frame(imageIndex);
+	prepare_frame(imageIndex, scene);
 
 	record_draw_commands(commandBuffer, imageIndex, scene);
 
@@ -744,6 +737,10 @@ void Engine::cleanup_swapchain()
 		device.unmapMemory(frame.camDataBuffer.bufferMemory);
 		device.freeMemory(frame.camDataBuffer.bufferMemory);
 		device.destroyBuffer(frame.camDataBuffer.buffer);
+
+		device.unmapMemory(frame.modelBuffer.bufferMemory);
+		device.freeMemory(frame.modelBuffer.bufferMemory);
+		device.destroyBuffer(frame.modelBuffer.buffer);
 	}
 
 	device.destroySwapchainKHR(swapchain);
