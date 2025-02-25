@@ -3,7 +3,7 @@
 #include "config.h"
 #include "shaders.h"
 #include "render_structs.h"
-#include "mesh.h"
+#include "meshUniforms.h"
 
 namespace vkInit
 {

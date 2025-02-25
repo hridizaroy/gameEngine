@@ -324,19 +324,25 @@ void Engine::prepare_frame(const uint32_t imageIndex, const Scene* scene)
 		&(frame.camData),
 		sizeof(vkUtil::UBOData));
 
-	size_t ii = 0;
-	for (const glm::vec3& position : scene->trianglePositions)
+	uint32_t ii = 0; 
+	for (ii = 0; ii < scene->entities.size(); ii++)
 	{
-		frame.modelTransforms[ii++] = glm::translate(glm::mat4(1.0), position);
+		frame.modelTransforms[ii] = scene->entities[ii].info->transform->GetWorldMatrix();
 	}
-	for (const glm::vec3& position : scene->pentagonPositions)
-	{
-		frame.modelTransforms[ii++] = glm::translate(glm::mat4(1.0), position);
-	}
-	for (const glm::vec3& position : scene->hexagonPositions)
-	{
-		frame.modelTransforms[ii++] = glm::translate(glm::mat4(1.0), position);
-	}
+
+	//size_t ii = 0;
+	//for (const glm::vec3& position : scene->trianglePositions)
+	//{
+	//	frame.modelTransforms[ii++] = glm::translate(glm::mat4(1.0), position);
+	//}
+	//for (const glm::vec3& position : scene->pentagonPositions)
+	//{
+	//	frame.modelTransforms[ii++] = glm::translate(glm::mat4(1.0), position);
+	//}
+	//for (const glm::vec3& position : scene->hexagonPositions)
+	//{
+	//	frame.modelTransforms[ii++] = glm::translate(glm::mat4(1.0), position);
+	//}
 
 	memcpy(frame.modelBufferWriteLocation,
 		frame.modelTransforms.data(),
@@ -395,7 +401,7 @@ void Engine::record_draw_commands(vk::CommandBuffer commandBuffer, uint32_t imag
 	prepare_scene(commandBuffer);
 
 	// Triangle
-	std::pair<size_t, size_t> offset_size = sceneData->lookupOffsetSize(MeshType::TRIANGLE);
+	/*std::pair<size_t, size_t> offset_size = sceneData->lookupOffsetSize(MeshType::TRIANGLE);
 
 	uint32_t offset = static_cast<uint32_t>(offset_size.first);
 	uint32_t vertexCount = static_cast<uint32_t>(offset_size.second);
@@ -403,29 +409,68 @@ void Engine::record_draw_commands(vk::CommandBuffer commandBuffer, uint32_t imag
 	uint32_t instanceCount = static_cast<uint32_t>(scene->trianglePositions.size());
 
 	commandBuffer.draw(vertexCount, instanceCount, offset, startInstance);
-	startInstance += instanceCount;
+	startInstance += instanceCount;*/
 
 	// Pentagon
-	offset_size = sceneData->lookupOffsetSize(MeshType::PENTAGON);
+	//offset_size = sceneData->lookupOffsetSize(MeshType::PENTAGON);
 
-	offset = offset_size.first;
-	vertexCount = offset_size.second;
-	instanceCount = static_cast<uint32_t>(scene->pentagonPositions.size());
+	//offset = offset_size.first;
+	//vertexCount = offset_size.second;
+	//instanceCount = static_cast<uint32_t>(scene->pentagonPositions.size());
 
-	commandBuffer.draw(vertexCount, instanceCount, offset, startInstance);
-	startInstance += instanceCount;
+	//commandBuffer.draw(vertexCount, instanceCount, offset, startInstance);
+	//startInstance += instanceCount;
 
-	// Hexagon
-	offset_size = sceneData->lookupOffsetSize(MeshType::HEXAGON);
+	//// Hexagon
+	//offset_size = sceneData->lookupOffsetSize(MeshType::HEXAGON);
 
-	offset = offset_size.first;
-	vertexCount = offset_size.second;
-	instanceCount = static_cast<uint32_t>(scene->hexagonPositions.size());
+	//offset = offset_size.first;
+	//vertexCount = offset_size.second;
+	//instanceCount = static_cast<uint32_t>(scene->hexagonPositions.size());
 
-	commandBuffer.draw(vertexCount, instanceCount, offset, startInstance);
-	startInstance += instanceCount;
+	//commandBuffer.draw(vertexCount, instanceCount, offset, startInstance);
+	//startInstance += instanceCount;
 
+
+	uint32_t i = 0;
+	while (i < scene->entities.size())
+	{
+		auto entity = scene->entities[i];
+		std::pair<size_t, size_t> offset_size = sceneData->lookupOffsetSize(entity.meshType);
+
+		size_t offset = offset_size.first;
+		size_t vertexCount = offset_size.second;
+		uint32_t startInstance = 0;
+
+		// TODO: Create a lookup table for amount of instances for a given type 
+		//		 instead of this brute foce search method. Combine scene and sceneData 
+
+		// Search for amount of instances. Assume organized into groups 
+		uint32_t instanceCount = 0;
+		uint32_t ii = i;
+		for (ii = i + 1; ii < scene->entities.size(); ii++)
+		{
+			// Iterate until you find entity with a different
+			// shape type. Then break. 
+
+			auto entityNeighbor = scene->entities[ii];
+
+			if (entityNeighbor.meshType != entity.meshType)
+			{
+				// Difference found 
+				break; 
+			}
+		}
+
+		instanceCount = ii; 
+		i += instanceCount;
+
+		commandBuffer.draw(vertexCount, instanceCount, offset, startInstance);
+		startInstance += instanceCount;
+	}
+	
 	commandBuffer.endRenderPass();
+
 
 	try
 	{
