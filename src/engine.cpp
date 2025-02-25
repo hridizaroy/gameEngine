@@ -327,15 +327,15 @@ void Engine::prepare_frame(const uint32_t imageIndex, const Scene* scene)
 	size_t ii = 0;
 	for (const glm::vec3& position : scene->trianglePositions)
 	{
-		frame.modelTransforms[ii++] = glm::translate(glm::mat4(), position);
+		frame.modelTransforms[ii++] = glm::translate(glm::mat4(1.0), position);
 	}
 	for (const glm::vec3& position : scene->pentagonPositions)
 	{
-		frame.modelTransforms[ii++] = glm::translate(glm::mat4(), position);
+		frame.modelTransforms[ii++] = glm::translate(glm::mat4(1.0), position);
 	}
 	for (const glm::vec3& position : scene->hexagonPositions)
 	{
-		frame.modelTransforms[ii++] = glm::translate(glm::mat4(), position);
+		frame.modelTransforms[ii++] = glm::translate(glm::mat4(1.0), position);
 	}
 
 	memcpy(frame.modelBufferWriteLocation,
