@@ -23,6 +23,7 @@ Engine::Engine(int width, int height, GLFWwindow* window, const char* appName, b
 	this->window = window;
 	this->debugMode = debugMode;
 	this->appName = appName;
+	this->scene = new Scene();
 
 	if (debugMode)
 	{
@@ -38,6 +39,7 @@ Engine::Engine(int width, int height, GLFWwindow* window, const char* appName, b
 	finalize_setup();
 
 	make_assets();
+	scene->InitEntities();
 }
 
 void Engine::make_instance()
@@ -263,7 +265,7 @@ void Engine::make_assets()
 		 0.00f,  0.00f,				   // UV
 	};
 
-	sceneData->consume(MeshType::TRIANGLE, vertexData);
+	scene->consume(MeshType::TRIANGLE, vertexData);
 
 	// TODO: Include UVs or oraganize nicely 
 	//vertexData = {
@@ -319,11 +321,11 @@ void Engine::make_assets()
 		 2.0f,  0.0f,				// UV
 	};
 
-	sceneData->consume(MeshType::TRIANGLE_FULLSCREEN, vertexData);
+	scene->consume(MeshType::TRIANGLE_FULLSCREEN, vertexData);
 
 
 	FinalizationChunk finalizationChunk{device, physicalDevice, graphicsQueue, mainCommandBuffer};
-	sceneData->finalize(finalizationChunk);
+	scene->finalize(finalizationChunk);
 }
 
 void Engine::prepare_frame(const uint32_t imageIndex, const Scene* scene)
@@ -369,7 +371,7 @@ void Engine::prepare_frame(const uint32_t imageIndex, const Scene* scene)
 
 void Engine::prepare_scene(const vk::CommandBuffer& commandBuffer)
 {
-	vk::Buffer vertexBuffers[] = { sceneData->getVertexBuffer() };
+	vk::Buffer vertexBuffers[] = { scene->getVertexBuffer() };
 	vk::DeviceSize offsets[] = { 0 };
 
 	commandBuffer.bindVertexBuffers(0, 1, vertexBuffers, offsets);
@@ -423,7 +425,7 @@ void Engine::record_draw_commands(vk::CommandBuffer commandBuffer, uint32_t imag
 	while (i < scene->entities.size())
 	{
 		auto entity = scene->entities[i];
-		std::pair<size_t, size_t> offset_size = sceneData->lookupOffsetSize(entity.meshType);
+		std::pair<size_t, size_t> offset_size = scene->lookupOffsetSize(entity.meshType);
 
 		size_t offset = offset_size.first;
 		size_t vertexCount = offset_size.second;
@@ -472,7 +474,7 @@ void Engine::record_draw_commands(vk::CommandBuffer commandBuffer, uint32_t imag
 	}
 }
 
-void Engine::render(Scene* scene)
+void Engine::render()
 {
 	device.waitForFences(1, &swapchainFrames[frameNum].inFlight, VK_TRUE, UINT64_MAX);
 	device.resetFences(1, &swapchainFrames[frameNum].inFlight);
@@ -808,7 +810,7 @@ Engine::~Engine()
 
 	device.destroyDescriptorSetLayout(descriptorSetLayout);
 
-	sceneData->cleanup(device);
+	scene->cleanup(device);
 
 	device.destroy();
 

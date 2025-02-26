@@ -6,7 +6,6 @@
 
 #include "scene.h"
 
-#include "SceneData.h"
 
 class Engine
 {
@@ -15,7 +14,7 @@ public:
 
 	~Engine();
 
-	void render(Scene* scene);
+	void render();
 
 private:
 	// TODO: Update variable/function naming conventions to be more organized and consistent
@@ -86,6 +85,9 @@ private:
 	vk::RenderPass imguiRenderPass;
 	// TODO: Make more efficient. Store as array?
 	vk::CommandPool imguiMainCommandPool;
+
+
+	Scene* scene;
 
 	// instance setup
 	void make_instance();
