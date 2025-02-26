@@ -14,7 +14,7 @@ void SceneData::consume(const MeshType& meshType, const std::vector<float>& vert
 		lump.push_back(attribute);
 	}
 
-	size_t vertexCount = vertexData.size() / 7;
+	size_t vertexCount = vertexData.size() / ATTRIBUTE_COUNT;
 
 	offsets_sizes.insert(
 		std::make_pair(

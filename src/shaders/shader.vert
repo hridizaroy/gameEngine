@@ -14,12 +14,24 @@ layout(std140, binding = 1) readonly buffer storageBuffer
 } ObjectData;
 
 layout(location = 0) in vec4 vertexColor;
-layout(location = 1) in vec3 vertexPosition;
+layout(location = 1) in vec4 vertexPosition;
+layout(location = 2) in vec2 uv;
 
 layout(location = 0) out vec4 fragColor;
 
+// TODO: Pass this in
+#define width 800.0f
+#define height 600.0f
+
 void main()
 {
-	gl_Position = camData.viewProjection * ObjectData.model[gl_InstanceIndex] * vec4(vertexPosition, 1.0);
+	// camData.viewProjection * ObjectData.model[gl_InstanceIndex] *
+	gl_Position = vertexPosition;
 	fragColor = vertexColor;
+
+	vec2 uvN = 2.0 * uv - 1.0;
+    uvN = vec2(uvN.x, uvN.y * height / width);
+
+	// Pass in uvs 
+	fragColor = vec4(uvN, 0.0, 1.0);
 }

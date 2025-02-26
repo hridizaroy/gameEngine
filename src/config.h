@@ -22,3 +22,6 @@ enum MeshType
 	HEXAGON,
 	TRIANGLE_FULLSCREEN
 };
+
+// Count of mandatory data per vertex 
+#define ATTRIBUTE_COUNT 10

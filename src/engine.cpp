@@ -250,48 +250,77 @@ void Engine::make_assets()
 	sceneData = new SceneData();
 
 	std::vector<float> vertexData = {
-		1.0f, 0.0f, 1.0f, 1.0f, 0.0f, -0.05f, 0.0f,
-		1.0f, 0.0f, 1.0f, 1.0f, 0.05f, 0.05f, 0.0f,
-		1.0f, 0.0f, 1.0f, 1.0f, -0.05f, 0.05f, 0.0f
+		 1.00f,  0.00f,  1.00f,  1.00f,// Color
+		 0.00f, -0.05f,  0.00f,  1.00f,// Position
+		 0.00f,  0.00f,				   // UV
+		
+		 1.00f,  0.00f,  1.00f,  1.00f,// Color
+		 0.05f,  0.05f,  0.00f,  1.00f,// Position
+		 0.00f,  0.00f,				   // UV
+
+		 1.00f,  0.00f,  1.00f,  1.00f,// Color
+		-0.05f,  0.05f,  0.00f,  1.00f,// Position
+		 0.00f,  0.00f,				   // UV
 	};
 
 	sceneData->consume(MeshType::TRIANGLE, vertexData);
 
-	vertexData = {
-		0.0f, 1.0f, 0.0f, 1.0f, -0.55f, -0.6f, +0.0f,
-		0.0f, 1.0f, 0.0f, 1.0f, -0.75f, -0.7f, +0.0f,
-		0.0f, 1.0f, 0.0f, 1.0f, -0.6f, -0.65f, +0.0f,
+	// TODO: Include UVs or oraganize nicely 
+	//vertexData = {
+	//	0.0f, 1.0f, 0.0f, 1.0f, -0.55f, -0.6f, +0.0f,
+	//	0.0f, 1.0f, 0.0f, 1.0f, -0.75f, -0.7f, +0.0f,
+	//	0.0f, 1.0f, 0.0f, 1.0f, -0.6f, -0.65f, +0.0f,
+	//
+	//	0.0f, 1.0f, 0.0f, 1.0f, -0.55f, -0.6f, +0.0f,
+	//	0.0f, 1.0f, 0.0f, 1.0f, -0.9f, -0.5f, +0.0f,
+	//	0.0f, 1.0f, 0.0f, 1.0f, -0.75f, -0.7f, +0.0f,
+	//
+	//	0.0f, 1.0f, 0.0f, 1.0f, -0.55f, -0.6f, +0.0f,
+	//	0.0f, 1.0f, 0.0f, 1.0f, -0.8f, +0.9f, +0.0f,
+	//	0.0f, 1.0f, 0.0f, 1.0f, -0.9f, -0.5f, +0.0f
+	//};
+	//
+	//sceneData->consume(MeshType::PENTAGON, vertexData);
+	//
+	//vertexData = {
+	//	1.0f, 0.0f, 0.0f, 1.0f, +0.8f, +0.9f, +0.0f,
+	//	1.0f, 0.0f, 0.0f, 1.0f, +0.75f, -0.7f, +0.0f,
+	//	1.0f, 0.0f, 0.0f, 1.0f, +0.9f, -0.5f, +0.0f,
+	//
+	//	1.0f, 0.0f, 0.0f, 1.0f, +0.8f, +0.9f, +0.0f,
+	//	1.0f, 0.0f, 0.0f, 1.0f, +0.6f, -0.65f, +0.0f,
+	//	1.0f, 0.0f, 0.0f, 1.0f, +0.75f, -0.7f, +0.0f,
+	//
+	//	1.0f, 0.0f, 0.0f, 1.0f, +0.8f, +0.9f, +0.0f,
+	//	1.0f, 0.0f, 0.0f, 1.0f, +0.55f, -0.6f, +0.0f,
+	//	1.0f, 0.0f, 0.0f, 1.0f, +0.6f, -0.65f, +0.0f,
+	//
+	//	1.0f, 0.0f, 0.0f, 1.0f, +0.8f, +0.9f, +0.0f,
+	//	1.0f, 0.0f, 0.0f, 1.0f, +0.7f, +0.85f, +0.0f,
+	//	1.0f, 0.0f, 0.0f, 1.0f, +0.55f, -0.6f, +0.0f
+	//};
+	//
+	//sceneData->consume(MeshType::HEXAGON, vertexData);
 
-		0.0f, 1.0f, 0.0f, 1.0f, -0.55f, -0.6f, +0.0f,
-		0.0f, 1.0f, 0.0f, 1.0f, -0.9f, -0.5f, +0.0f,
-		0.0f, 1.0f, 0.0f, 1.0f, -0.75f, -0.7f, +0.0f,
 
-		0.0f, 1.0f, 0.0f, 1.0f, -0.55f, -0.6f, +0.0f,
-		0.0f, 1.0f, 0.0f, 1.0f, -0.8f, +0.9f, +0.0f,
-		0.0f, 1.0f, 0.0f, 1.0f, -0.9f, -0.5f, +0.0f
+
+	vertexData =
+	{
+		 1.0f,  1.0f,  1.0f,  1.0f, // Color
+		-1.0f,  1.0f,  0.0f,  1.0f,	// Position
+		 0.0f,  0.0f,				// UV
+
+		 1.0f,  1.0f,  1.0f,  1.0f, // Color
+		-1.0f, -3.0f,  0.0f,  1.0f,	// Position
+		 0.0f,  2.0f,				// UV
+
+		 1.0f,  1.0f,  1.0f,  1.0f, // Color
+		 3.0f,  1.0f,  0.0f,  1.0f,	// Position
+		 2.0f,  0.0f,				// UV
 	};
 
-	sceneData->consume(MeshType::PENTAGON, vertexData);
+	sceneData->consume(MeshType::TRIANGLE_FULLSCREEN, vertexData);
 
-	vertexData = {
-		1.0f, 0.0f, 0.0f, 1.0f, +0.8f, +0.9f, +0.0f,
-		1.0f, 0.0f, 0.0f, 1.0f, +0.75f, -0.7f, +0.0f,
-		1.0f, 0.0f, 0.0f, 1.0f, +0.9f, -0.5f, +0.0f,
-
-		1.0f, 0.0f, 0.0f, 1.0f, +0.8f, +0.9f, +0.0f,
-		1.0f, 0.0f, 0.0f, 1.0f, +0.6f, -0.65f, +0.0f,
-		1.0f, 0.0f, 0.0f, 1.0f, +0.75f, -0.7f, +0.0f,
-
-		1.0f, 0.0f, 0.0f, 1.0f, +0.8f, +0.9f, +0.0f,
-		1.0f, 0.0f, 0.0f, 1.0f, +0.55f, -0.6f, +0.0f,
-		1.0f, 0.0f, 0.0f, 1.0f, +0.6f, -0.65f, +0.0f,
-
-		1.0f, 0.0f, 0.0f, 1.0f, +0.8f, +0.9f, +0.0f,
-		1.0f, 0.0f, 0.0f, 1.0f, +0.7f, +0.85f, +0.0f,
-		1.0f, 0.0f, 0.0f, 1.0f, +0.55f, -0.6f, +0.0f
-	};
-
-	sceneData->consume(MeshType::HEXAGON, vertexData);
 
 	FinalizationChunk finalizationChunk{device, physicalDevice, graphicsQueue, mainCommandBuffer};
 	sceneData->finalize(finalizationChunk);
@@ -324,25 +353,12 @@ void Engine::prepare_frame(const uint32_t imageIndex, const Scene* scene)
 		&(frame.camData),
 		sizeof(vkUtil::UBOData));
 
+	// Individual matricies are set here! 
 	uint32_t ii = 0; 
 	for (ii = 0; ii < scene->entities.size(); ii++)
 	{
 		frame.modelTransforms[ii] = scene->entities[ii].info->transform->GetWorldMatrix();
 	}
-
-	//size_t ii = 0;
-	//for (const glm::vec3& position : scene->trianglePositions)
-	//{
-	//	frame.modelTransforms[ii++] = glm::translate(glm::mat4(1.0), position);
-	//}
-	//for (const glm::vec3& position : scene->pentagonPositions)
-	//{
-	//	frame.modelTransforms[ii++] = glm::translate(glm::mat4(1.0), position);
-	//}
-	//for (const glm::vec3& position : scene->hexagonPositions)
-	//{
-	//	frame.modelTransforms[ii++] = glm::translate(glm::mat4(1.0), position);
-	//}
 
 	memcpy(frame.modelBufferWriteLocation,
 		frame.modelTransforms.data(),
@@ -400,38 +416,9 @@ void Engine::record_draw_commands(vk::CommandBuffer commandBuffer, uint32_t imag
 
 	prepare_scene(commandBuffer);
 
-	// Triangle
-	/*std::pair<size_t, size_t> offset_size = sceneData->lookupOffsetSize(MeshType::TRIANGLE);
-
-	uint32_t offset = static_cast<uint32_t>(offset_size.first);
-	uint32_t vertexCount = static_cast<uint32_t>(offset_size.second);
-	uint32_t startInstance = 0;
-	uint32_t instanceCount = static_cast<uint32_t>(scene->trianglePositions.size());
-
-	commandBuffer.draw(vertexCount, instanceCount, offset, startInstance);
-	startInstance += instanceCount;*/
-
-	// Pentagon
-	//offset_size = sceneData->lookupOffsetSize(MeshType::PENTAGON);
-
-	//offset = offset_size.first;
-	//vertexCount = offset_size.second;
-	//instanceCount = static_cast<uint32_t>(scene->pentagonPositions.size());
-
-	//commandBuffer.draw(vertexCount, instanceCount, offset, startInstance);
-	//startInstance += instanceCount;
-
-	//// Hexagon
-	//offset_size = sceneData->lookupOffsetSize(MeshType::HEXAGON);
-
-	//offset = offset_size.first;
-	//vertexCount = offset_size.second;
-	//instanceCount = static_cast<uint32_t>(scene->hexagonPositions.size());
-
-	//commandBuffer.draw(vertexCount, instanceCount, offset, startInstance);
-	//startInstance += instanceCount;
 
 
+	// Draw each shape and instance duplicates 
 	uint32_t i = 0;
 	while (i < scene->entities.size())
 	{

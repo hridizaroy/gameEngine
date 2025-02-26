@@ -116,12 +116,12 @@ namespace vkInit
 		// Vertex Input
 		uint32_t binding = 0;
 		vk::VertexInputBindingDescription bindingDesc = vkMesh::getBasicVertexBindingDesc(binding);
-		std::array<vk::VertexInputAttributeDescription, 2> attrDesc = vkMesh::getBasicAttrDesc(binding);
+		std::array<vk::VertexInputAttributeDescription, 3> attrDesc = vkMesh::getBasicAttrDesc(binding);
 
 		vk::PipelineVertexInputStateCreateInfo vertexInputInfo = {};
 		vertexInputInfo.flags = vk::PipelineVertexInputStateCreateFlags();
 		vertexInputInfo.vertexBindingDescriptionCount = 1;
-		vertexInputInfo.vertexAttributeDescriptionCount = 2;
+		vertexInputInfo.vertexAttributeDescriptionCount = 3;
 		vertexInputInfo.pVertexBindingDescriptions = &bindingDesc;
 		vertexInputInfo.pVertexAttributeDescriptions = attrDesc.data();
 

@@ -10,12 +10,12 @@ namespace vkMesh
 
 		bindingDesc.binding = binding;
 		bindingDesc.inputRate = vk::VertexInputRate::eVertex;
-		bindingDesc.stride = sizeof(float) * 7;
+		bindingDesc.stride = sizeof(float) * ATTRIBUTE_COUNT;
 
 		return bindingDesc;
 	}
 
-	std::array<vk::VertexInputAttributeDescription, 2> getBasicAttrDesc(uint32_t binding)
+	std::array<vk::VertexInputAttributeDescription, 3> getBasicAttrDesc(uint32_t binding)
 	{
 		// Color
 		vk::VertexInputAttributeDescription colDesc{};
@@ -31,6 +31,13 @@ namespace vkMesh
 		posDesc.location = 1;
 		posDesc.offset = sizeof(float) * 4;
 
-		return { colDesc, posDesc };
+		// UV 
+		vk::VertexInputAttributeDescription uvDesc{};
+		uvDesc.binding = binding;
+		uvDesc.format = vk::Format::eR32G32Sfloat;
+		uvDesc.location = 2;
+		uvDesc.offset = sizeof(float) * (8);
+
+		return { colDesc, posDesc, uvDesc };
 	}
 }
