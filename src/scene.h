@@ -50,11 +50,3 @@ private:
 
 
 };
-
-
-
-
-class SceneData
-{
-
-};

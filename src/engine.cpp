@@ -39,7 +39,9 @@ Engine::Engine(int width, int height, GLFWwindow* window, const char* appName, b
 	finalize_setup();
 
 	make_assets();
-	scene->InitEntities();
+	
+
+	editorGUI = EditorGUI();
 }
 
 void Engine::make_instance()
@@ -249,8 +251,6 @@ void Engine::finalize_setup()
 // (assuming the axis is coming from the screen towards you)
 void Engine::make_assets()
 {
-	sceneData = new SceneData();
-
 	std::vector<float> vertexData = {
 		 1.00f,  0.00f,  1.00f,  1.00f,// Color
 		 0.00f, -0.05f,  0.00f,  1.00f,// Position
@@ -326,6 +326,9 @@ void Engine::make_assets()
 
 	FinalizationChunk finalizationChunk{device, physicalDevice, graphicsQueue, mainCommandBuffer};
 	scene->finalize(finalizationChunk);
+
+	// Create entities for the scene 
+	scene->InitEntities();
 }
 
 void Engine::prepare_frame(const uint32_t imageIndex, const Scene* scene)
@@ -505,6 +508,30 @@ void Engine::render()
 	ImGui::Begin("Another Window");
 	ImGui::Text("Hello from another window!");
 	ImGui::End();
+
+	ImGui::Begin("Hierachy");
+	std::string size = std::to_string(scene->entities.size());
+	ImGui::Text(size.c_str());
+	
+	uint32_t id = 0;
+	for (auto entity : scene->entities)
+	{
+		editorGUI.CreateREntityGUI(entity, id);
+		id++;
+	}
+
+	REntity rEntity;
+	std::shared_ptr<UInfo> info = std::make_shared<UInfo>();
+	info->name = "Extra";
+	info->transform = std::make_shared<Transform>();
+	info->transform->MoveAbs(glm::vec3(-0.4f, 0.1f, 0.0f));
+
+	rEntity.info = info;
+	rEntity.meshType = TRIANGLE;
+	editorGUI.CreateREntityGUI(rEntity, id + 1);
+
+	ImGui::End();
+
 	ImGui::Render();
 
 	// Imgui

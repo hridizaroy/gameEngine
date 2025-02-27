@@ -52,7 +52,6 @@ void Transform::CleanVectors()
 
 void Transform::SetPosition(float x, float y, float z)
 {
-	// Was there a XMFloat function for this? 
 	position.x = x;
 	position.y = y;
 	position.z = z;
@@ -60,9 +59,9 @@ void Transform::SetPosition(float x, float y, float z)
 	matIsDirty = true;
 }
 
-void Transform::SetPosition(glm::vec3 position)
+void Transform::SetPosition(glm::vec3 pos)
 {
-	position = position;
+	position = pos;
 	matIsDirty = true;
 }
 

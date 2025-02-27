@@ -6,6 +6,8 @@
 
 #include "scene.h"
 
+#include "EditorGUI.h"
+
 
 class Engine
 {
@@ -77,17 +79,16 @@ private:
 	vk::DescriptorSetLayout descriptorSetLayout;
 	vk::DescriptorPool descriptorPool;
 
-	// assets
-	SceneData* sceneData;
-
 	// Imgui variables
 	vk::DescriptorPool imguiDescriptorPool;
 	vk::RenderPass imguiRenderPass;
 	// TODO: Make more efficient. Store as array?
 	vk::CommandPool imguiMainCommandPool;
 
-
+	// Entityies and mesh data 
 	Scene* scene;
+
+	EditorGUI editorGUI;
 
 	// instance setup
 	void make_instance();

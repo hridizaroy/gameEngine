@@ -25,8 +25,7 @@ layout(location = 0) out vec4 fragColor;
 
 void main()
 {
-	// camData.viewProjection * ObjectData.model[gl_InstanceIndex] *
-	gl_Position = vertexPosition;
+	gl_Position = ObjectData.model[gl_InstanceIndex] * camData.viewProjection * vertexPosition;
 	fragColor = vertexColor;
 
 	vec2 uvN = 2.0 * uv - 1.0;
