@@ -2,11 +2,13 @@
 
 Transform::Transform() :
 	position(glm::vec3(0.0f, 0.0f, 0.0f)),
-	quatRot(1.0f, 0.0f, 0.0f, 0.0f),
+	//quatRot(1.0f, 0.0f, 0.0f, 0.0f),
 	scale(1.0f, 1.0f, 1.0f)
 {
 	worldMatrix = glm::mat4x4();
 	worldInverseTransposeMatrix = glm::mat4x4();
+
+	quatRot = glm::quat(0,0,0,1);
 
 	matIsDirty = true;
 	dirIsDirty = true;
@@ -28,7 +30,7 @@ void Transform::CleanMatrices()
 		glm::mat4x4 sca = glm::scale(glm::mat4(1.0f), scale);
 
 		// Final results set here 
-		worldMatrix = sca * rot * pos;
+		worldMatrix = pos * rot * sca;
 		worldInverseTransposeMatrix = glm::inverse(glm::transpose(worldMatrix));
 
 		matIsDirty = false;
@@ -75,10 +77,18 @@ void Transform::SetEulerRotation(float pitch, float yaw, float roll)
 
 void Transform::SetEulerRotation(glm::vec3 rotation)
 {
-	quatRot = ToQuat(rotation.x, rotation.y, rotation.z);
+	quatRot = ToQuat(rotation.z, rotation.x, rotation.y);
 
 	matIsDirty = true;
 	dirIsDirty = true;
+}
+
+void Transform::SetRotation(glm::quat q)
+{
+	quatRot = q;
+
+	matIsDirty = true;
+	dirIsDirty = true; 
 }
 
 void Transform::SetScale(float x, float y, float z)
@@ -114,7 +124,15 @@ glm::vec3 Transform::GetPosition()
 
 glm::vec3 Transform::GetEulerRotation()
 {
-	return ToEuler(quatRot);
+	if (dirIsDirty)
+		CleanVectors();
+
+	return glm::eulerAngles(quatRot); //ToEuler(quatRot);
+}
+
+glm::quat Transform::GetRotation()
+{
+	return quatRot;
 }
 
 glm::vec3 Transform::GetScale()
@@ -211,7 +229,7 @@ void Transform::MoveRelative(glm::vec3 vec)
 
 void Transform::RotateEuler(float pitch, float yaw, float roll)
 {
-	glm::vec4 mutQuat = ToQuat(roll, pitch, yaw);
+	glm::quat mutQuat = ToQuat(roll, pitch, yaw);
 	quatRot = quatRot * mutQuat;
 
 	matIsDirty = true;
@@ -220,7 +238,7 @@ void Transform::RotateEuler(float pitch, float yaw, float roll)
 
 void Transform::RotateEuler(glm::vec3 rotation)
 {
-	glm::vec4 mutQuat = ToQuat(rotation.z, rotation.x, rotation.y);
+	glm::quat mutQuat = ToQuat(rotation.z, rotation.x, rotation.y);
 	quatRot = quatRot * mutQuat;
 
 	matIsDirty = true;

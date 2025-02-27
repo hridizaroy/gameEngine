@@ -2,6 +2,7 @@
 
 #include "config.h"
 #include "cmath"
+#include<glm/gtc/quaternion.hpp>
 
 // Modified from: https://github.com/vixorien/AdvancedDX11Starter/blob/main/Transform.h
 
@@ -26,6 +27,7 @@ public:
 	void SetPosition(glm::vec3 position);
 	void SetEulerRotation(float p, float y, float r);
 	void SetEulerRotation(glm::vec3 pitchYawRoll);
+	void SetRotation(glm::quat q);
 	void SetScale(float uniformScale);
 	void SetScale(float x, float y, float z);
 	void SetScale(glm::vec3 scale);
@@ -33,6 +35,7 @@ public:
 	// Getters
 	glm::vec3 GetPosition();
 	glm::vec3 GetEulerRotation();
+	glm::quat GetRotation();
 	glm::vec3 GetScale();
 
 	// Local direction vector getters
@@ -47,7 +50,7 @@ public:
 private:
 	// Raw transformation data
 	glm::vec3 position;
-	glm::vec4 quatRot;
+	glm::quat quatRot;
 	glm::vec3 scale;
 
 	// Local orientation vectors
@@ -66,7 +69,7 @@ private:
 	void CleanVectors();
 };
 
-inline static glm::vec3 QuatRot(glm::vec4 q, glm::vec3 v)
+inline static glm::vec3 QuatRot(glm::quat q, glm::vec3 v)
 {
 	// Reference: https://stackoverflow.com/questions/44705398/about-glm-quaternion-rotation
 	glm::vec3 c = glm::cross(
@@ -75,7 +78,7 @@ inline static glm::vec3 QuatRot(glm::vec4 q, glm::vec3 v)
 	return v + 2.0f * c;
 }
 
-inline static glm::vec4 ToQuat(double roll, double pitch, double yaw) // roll (x), pitch (y), yaw (z), angles are in radians
+inline static glm::quat ToQuat(double roll, double pitch, double yaw) // roll (x), pitch (y), yaw (z), angles are in radians
 {
 	// Reference: https://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles
 
@@ -88,7 +91,7 @@ inline static glm::vec4 ToQuat(double roll, double pitch, double yaw) // roll (x
 	double cy = cos(yaw * 0.5);
 	double sy = sin(yaw * 0.5);
 
-	glm::vec4 q;
+	glm::quat q;
 	q.w = cr * cp * cy + sr * sp * sy;
 	q.x = sr * cp * cy - cr * sp * sy;
 	q.y = cr * sp * cy + sr * cp * sy;
@@ -97,7 +100,7 @@ inline static glm::vec4 ToQuat(double roll, double pitch, double yaw) // roll (x
 	return q;
 }
 
-static inline glm::vec3 ToEuler(glm::vec4 q) 
+static inline glm::vec3 ToEuler(glm::quat q) 
 {
 
 	// Reference: https://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles
@@ -118,6 +121,10 @@ static inline glm::vec3 ToEuler(glm::vec4 q)
 	double siny_cosp = 2 * (q.w * q.z + q.x * q.y);
 	double cosy_cosp = 1 - 2 * (q.y * q.y + q.z * q.z);
 	angles.y = std::atan2(siny_cosp, cosy_cosp);
+
+
+	//glm::quat()
+	
 
 	return angles;
 }

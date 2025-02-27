@@ -504,10 +504,6 @@ void Engine::render()
 	ImGui_ImplVulkan_NewFrame();
 	ImGui_ImplGlfw_NewFrame();
 	ImGui::NewFrame();
-	ImGui::ShowDemoWindow();
-	ImGui::Begin("Another Window");
-	ImGui::Text("Hello from another window!");
-	ImGui::End();
 
 	ImGui::Begin("Hierachy");
 	std::string size = std::to_string(scene->entities.size());

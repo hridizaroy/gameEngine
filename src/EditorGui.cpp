@@ -1,6 +1,9 @@
 #include "EditorGUI.h"
 #include "config.h"
 
+#define _USE_MATH_DEFINES
+#include <math.h>
+
 EditorGUI::EditorGUI()
 {
 
@@ -14,7 +17,7 @@ void EditorGUI::CreateREntityGUI(REntity& entity, uint32_t id)
 	std::shared_ptr<Transform> trans = entity.info->transform;
 
 	glm::vec3 pos = trans->GetPosition();
-	glm::vec3 rot = trans->GetEulerRotation();
+	glm::quat rot = trans->GetRotation();
 	glm::vec3 sca = trans->GetScale();
 
 
@@ -25,9 +28,9 @@ void EditorGUI::CreateREntityGUI(REntity& entity, uint32_t id)
 	{
 		trans->SetPosition(pos);
 	}
-	if (ImGui::DragFloat3("Rotation", &rot[0], 0.01f))
+	if (ImGui::DragFloat4("Rotation", &rot[0], 0.01f))
 	{
-		trans->SetEulerRotation(rot);
+		trans->SetRotation(rot);
 	}
 	if (ImGui::DragFloat3("Scale", &sca[0], 0.01f))
 	{
