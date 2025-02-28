@@ -8,7 +8,7 @@ Transform::Transform() :
 	worldMatrix = glm::mat4x4();
 	worldInverseTransposeMatrix = glm::mat4x4();
 
-	quatRot = glm::quat(0,0,0,1);
+	quatRot = glm::quat(1,0,0,0);
 
 	matIsDirty = true;
 	dirIsDirty = true;
@@ -26,7 +26,7 @@ void Transform::CleanMatrices()
 	{
 		// Get each of parts that represent the world matrix 
 		glm::mat4x4 pos = glm::translate(glm::mat4(1.0f), position);
-		glm::mat4x4 rot = glm::rotate(glm::mat4(1.0f), quatRot.w, glm::vec3(quatRot.x, quatRot.y, quatRot.z));
+		glm::mat4x4 rot = glm::mat4_cast(quatRot); //glm::rotate(glm::mat4(1.0f), quatRot.w, glm::vec3(quatRot.x, quatRot.y, quatRot.z));
 		glm::mat4x4 sca = glm::scale(glm::mat4(1.0f), scale);
 
 		// Final results set here 
@@ -77,7 +77,7 @@ void Transform::SetEulerRotation(float pitch, float yaw, float roll)
 
 void Transform::SetEulerRotation(glm::vec3 rotation)
 {
-	quatRot = ToQuat(rotation.z, rotation.x, rotation.y);
+	quatRot = ToQuat(rotation.x, rotation.y, rotation.z);
 
 	matIsDirty = true;
 	dirIsDirty = true;
@@ -124,9 +124,6 @@ glm::vec3 Transform::GetPosition()
 
 glm::vec3 Transform::GetEulerRotation()
 {
-	if (dirIsDirty)
-		CleanVectors();
-
 	return glm::eulerAngles(quatRot); //ToEuler(quatRot);
 }
 
@@ -225,6 +222,14 @@ void Transform::MoveRelative(glm::vec3 vec)
 	position = toMove;
 
 	matIsDirty = true;
+}
+
+void Transform::Rotate(glm::quat q)
+{
+	quatRot *= q;
+
+	matIsDirty = true;
+	dirIsDirty = true;
 }
 
 void Transform::RotateEuler(float pitch, float yaw, float roll)

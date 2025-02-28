@@ -16,6 +16,7 @@ public:
 	void MoveAbs(glm::vec3 offset);
 	void MoveRelative(float x, float y, float z);
 	void MoveRelative(glm::vec3 offset);
+	void Rotate(glm::quat q);
 	void RotateEuler(float p, float y, float r);
 	void RotateEuler(glm::vec3 pitchYawRoll);
 	void Scale(float uniformScale);
@@ -84,12 +85,12 @@ inline static glm::quat ToQuat(double roll, double pitch, double yaw) // roll (x
 
 	// Abbreviations for the various angular functions
 
-	double cr = cos(roll * 0.5);
-	double sr = sin(roll * 0.5);
-	double cp = cos(pitch * 0.5);
-	double sp = sin(pitch * 0.5);
-	double cy = cos(yaw * 0.5);
-	double sy = sin(yaw * 0.5);
+	double cr = cos(roll);
+	double sr = sin(roll);
+	double cp = cos(pitch);
+	double sp = sin(pitch);
+	double cy = cos(yaw);
+	double sy = sin(yaw);
 
 	glm::quat q;
 	q.w = cr * cp * cy + sr * sp * sy;
@@ -97,7 +98,7 @@ inline static glm::quat ToQuat(double roll, double pitch, double yaw) // roll (x
 	q.y = cr * sp * cy + sr * cp * sy;
 	q.z = cr * cp * sy - sr * sp * cy;
 
-	return q;
+	return glm::normalize(q);
 }
 
 static inline glm::vec3 ToEuler(glm::quat q) 
@@ -110,17 +111,17 @@ static inline glm::vec3 ToEuler(glm::quat q)
 	// roll (x-axis rotation)
 	double sinr_cosp = 2 * (q.w * q.x + q.y * q.z);
 	double cosr_cosp = 1 - 2 * (q.x * q.x + q.y * q.y);
-	angles.z = std::atan2(sinr_cosp, cosr_cosp);
+	angles.x = std::atan2(sinr_cosp, cosr_cosp);
 
 	// pitch (y-axis rotation)
 	double sinp = std::sqrt(1 + 2 * (q.w * q.y - q.x * q.z));
 	double cosp = std::sqrt(1 - 2 * (q.w * q.y - q.x * q.z));
-	angles.x = 2 * std::atan2(sinp, cosp) - (2 * asin(1.0f)) / 2;
+	angles.y = 2 * std::atan2(sinp, cosp) - (2 * asin(1.0f)) / 2;
 
 	// yaw (z-axis rotation)
 	double siny_cosp = 2 * (q.w * q.z + q.x * q.y);
 	double cosy_cosp = 1 - 2 * (q.y * q.y + q.z * q.z);
-	angles.y = std::atan2(siny_cosp, cosy_cosp);
+	angles.z = std::atan2(siny_cosp, cosy_cosp);
 
 
 	//glm::quat()

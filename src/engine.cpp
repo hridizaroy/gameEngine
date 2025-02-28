@@ -335,9 +335,9 @@ void Engine::prepare_frame(const uint32_t imageIndex, const Scene* scene)
 {
 	vkUtil::SwapchainFrame& frame = swapchainFrames[imageIndex];
 
-	glm::vec3 eye{ 1.0f, 0.0f, -1.0f };
+	glm::vec3 eye{ 0.0f, 0.0f, -1.0f };
 	glm::vec3 center{ 0.0f, 0.0f, 0.0f };
-	glm::vec3 up{ 0.0f, 0.0f, -1.0f };
+	glm::vec3 up{ 0.0f, 1.0f, 0.0f };
 
 	glm::mat4 view{ glm::lookAtRH(eye, center, up) };
 
