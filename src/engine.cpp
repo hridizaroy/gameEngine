@@ -176,8 +176,8 @@ void Engine::make_pipeline()
 {
 	vkInit::GraphicsPipelineInBundle specification{};
 	specification.device = device;
-	specification.vertexFilepath = "./shaders/vertex.spv";
-	specification.fragmentFilepath = "./shaders/fragment.spv";
+	specification.vertexFilepath = "./shaders/vertex_raymarch.spv";
+	specification.fragmentFilepath = "./shaders/fragment_raymarch.spv";
 	specification.swapchainExtent = swapchainExtent;
 	specification.swapchainImageFormat = swapchainFormat;
 	specification.descriptorSetLayout = descriptorSetLayout;
@@ -362,7 +362,7 @@ void Engine::prepare_frame(const uint32_t imageIndex, const Scene* scene)
 	uint32_t ii = 0; 
 	for (ii = 0; ii < scene->entities.size(); ii++)
 	{
-		frame.modelTransforms[ii] = scene->entities[ii].info->transform->GetWorldMatrix();
+		frame.modelTransforms[ii] = scene->entities[ii]->info->transform->GetWorldMatrix();
 	}
 
 	memcpy(frame.modelBufferWriteLocation,
@@ -428,7 +428,7 @@ void Engine::record_draw_commands(vk::CommandBuffer commandBuffer, uint32_t imag
 	while (i < scene->entities.size())
 	{
 		auto entity = scene->entities[i];
-		std::pair<size_t, size_t> offset_size = scene->lookupOffsetSize(entity.meshType);
+		std::pair<size_t, size_t> offset_size = scene->lookupOffsetSize(entity->meshType);
 
 		size_t offset = offset_size.first;
 		size_t vertexCount = offset_size.second;
@@ -447,7 +447,7 @@ void Engine::record_draw_commands(vk::CommandBuffer commandBuffer, uint32_t imag
 
 			auto entityNeighbor = scene->entities[ii];
 
-			if (entityNeighbor.meshType != entity.meshType)
+			if (entityNeighbor->meshType != entity->meshType)
 			{
 				// Difference found 
 				break; 
@@ -512,20 +512,18 @@ void Engine::render()
 	uint32_t id = 0;
 	for (auto entity : scene->entities)
 	{
-		editorGUI.CreateREntityGUI(entity, id);
+		//editorGUI.CreateREntityGUI(entity, id);
+		if (editorGUI.CreateREntitySelectGUI(entity, id))
+		{
+			editorGUI.UpdateInspector(entity);
+		}
 		id++;
 	}
 
-	REntity rEntity;
-	std::shared_ptr<UInfo> info = std::make_shared<UInfo>();
-	info->name = "Extra";
-	info->transform = std::make_shared<Transform>();
-	info->transform->MoveAbs(glm::vec3(-0.4f, 0.1f, 0.0f));
+	ImGui::End();
 
-	rEntity.info = info;
-	rEntity.meshType = TRIANGLE;
-	editorGUI.CreateREntityGUI(rEntity, id + 1);
-
+	ImGui::Begin("Inspector");
+	editorGUI.DrawInspector();
 	ImGui::End();
 
 	ImGui::Render();

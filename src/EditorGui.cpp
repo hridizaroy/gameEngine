@@ -10,11 +10,22 @@ EditorGUI::EditorGUI()
 }
 
 /// <summary>
-/// Generates a gui for a single REntity 
+/// Generates a button to select a raster entity 
 /// </summary>
-void EditorGUI::CreateREntityGUI(REntity& entity, uint32_t id)
+bool EditorGUI::CreateREntitySelectGUI(REntity* entity, uint32_t id)
 {
-	std::shared_ptr<Transform> trans = entity.info->transform;
+	ImGui::PushID(id);
+	bool v = ImGui::Button(entity->info->name.c_str());
+	ImGui::PopID();
+	return v;
+}
+
+/// <summary>
+/// Generates a gui for a single REntity intended for the inspector 
+/// </summary>
+void EditorGUI::CreateREntityInspectGUI(REntity* entity, uint32_t id)
+{
+	std::shared_ptr<Transform> trans = entity->info->transform;
 
 	glm::vec3 pos = trans->GetPosition();
 	glm::vec3 rot = trans->GetEulerRotation();
@@ -23,7 +34,7 @@ void EditorGUI::CreateREntityGUI(REntity& entity, uint32_t id)
 	glm::vec3 holdRot = rot; 
 
 	ImGui::PushID(id);
-	ImGui::Text(entity.info->name.c_str());
+	ImGui::Text(entity->info->name.c_str());
 
 	if (ImGui::DragFloat3("Position", &pos[0], 0.01f))
 	{
@@ -40,4 +51,27 @@ void EditorGUI::CreateREntityGUI(REntity& entity, uint32_t id)
 	}
 
 	ImGui::PopID();
+}
+
+
+
+/// <summary>
+/// Sets a new active entity 
+/// </summary>
+/// <param name="entity"></param>
+void EditorGUI::UpdateInspector(REntity* entity)
+{
+	activeEntity = entity; 
+}
+
+
+/// <summary>
+/// Generates inspector information specific 
+/// </summary>
+void EditorGUI::DrawInspector()
+{
+	if (activeEntity == nullptr)
+		return;
+
+	CreateREntityInspectGUI(activeEntity, 0);
 }

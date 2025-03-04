@@ -19,16 +19,8 @@ public:
 	Scene();
 	~Scene();
 
-	//std::vector<glm::vec3> trianglePositions;
-	//std::vector<glm::vec3> pentagonPositions;
-	//std::vector<glm::vec3> hexagonPositions;
-
-
 	void InitEntities(); 
-	std::vector<REntity> entities; 
-
-
-
+	std::vector<REntity*> entities; 
 
 public:
 

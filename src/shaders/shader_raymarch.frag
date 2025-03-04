@@ -4,10 +4,6 @@ layout(location = 0) in vec3 fragColor;
 
 layout(location = 0) out vec4 outColor;
 
-const float WIDTH = 800.0f;
-const float HEIGHT = 600.0f;
-
-
 
 // Example data 
 
@@ -130,7 +126,6 @@ void main()
 							sceneMap);
 		}
 
-		//outColor = vec4(1.0f, 0.0f, 0.0f, 0.0f);
 		if (sceneMap <= threshold)
 		{
 			outColor = vec4(1.0, 0.0f, 0.0f, 1.0f);

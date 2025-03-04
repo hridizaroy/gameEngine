@@ -19,8 +19,8 @@ layout(push_constant) uniform constants
 layout(location = 0) out vec4 fragColor;
 
 
-#define width 800.0f
-#define height 600.0f
+#define width  1800.0f
+#define height 1000.0f
 
 void main()
 {

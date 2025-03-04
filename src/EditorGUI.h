@@ -11,9 +11,12 @@ class EditorGUI
 public:
 	EditorGUI();
 
-	void CreateREntityGUI(REntity& entity, uint32_t id);
+	bool CreateREntitySelectGUI(REntity* entity, uint32_t id);
+	void CreateREntityInspectGUI(REntity* entity, uint32_t id);
+
+	void UpdateInspector(REntity* entity);
+	void DrawInspector();
 
 private:
-
-
+	REntity* activeEntity;
 };
