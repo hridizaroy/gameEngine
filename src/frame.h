@@ -12,6 +12,14 @@ namespace vkUtil
 		glm::mat4 viewProjection;
 	};
 
+	template <typename T>
+	struct Uniform
+	{
+		std::vector<T> data;
+		BufferData buffer;
+		void* bufferWriteLocation;
+	};
+
 	struct SwapchainFrame
 	{
 		// swapchain
@@ -35,10 +43,11 @@ namespace vkUtil
 		void* camDataWriteLocation;
 
 		// TODO: Can we make this an array?
-		std::vector<glm::mat4> modelTransforms;
-		BufferData modelBuffer;
-		void* modelBufferWriteLocation;
-
+		Uniform<glm::mat4>* modelUniform; 
+		Uniform<float> shapeUniform;
+		Uniform<float> shapeParamUniform; 
+						
+						
 		// resource descriptors
 		vk::DescriptorBufferInfo uniformBufferDescriptor;
 		vk::DescriptorBufferInfo modelBufferDescriptor;
@@ -67,21 +76,29 @@ namespace vkUtil
 
 			input.size = maxBufferSize * sizeof(glm::mat4);
 			input.usage = vk::BufferUsageFlagBits::eStorageBuffer;
-			modelBuffer = create_buffer(input);
+			modelUniform = new Uniform<glm::mat4>();
+			modelUniform->buffer = create_buffer(input);
 
-			modelBufferWriteLocation = logicalDevice.mapMemory(modelBuffer.bufferMemory,
+			modelUniform->bufferWriteLocation = logicalDevice.mapMemory(modelUniform->buffer.bufferMemory,
 				0, input.size);
 
 			// Initialize <maxBufferSize> identity matrices
-			modelTransforms.resize(maxBufferSize);
+			modelUniform->data.resize(maxBufferSize);
 
 			uniformBufferDescriptor.buffer = camDataBuffer.buffer;
 			uniformBufferDescriptor.offset = 0;
 			uniformBufferDescriptor.range = sizeof(UBOData);
 
-			modelBufferDescriptor.buffer = modelBuffer.buffer;
+			modelBufferDescriptor.buffer = modelUniform->buffer.buffer;
 			modelBufferDescriptor.offset = 0;
 			modelBufferDescriptor.range = maxBufferSize * sizeof(glm::mat4);
+
+
+			// Shapes 
+
+
+
+			// Shape Parameters 
 		}
 
 		void fill_descriptor_set(const vk::Device& logicalDevice)
@@ -111,6 +128,11 @@ namespace vkUtil
 
 				logicalDevice.updateDescriptorSets(writeInfo, nullptr);
 			}
+		}
+
+		~SwapchainFrame()
+		{
+			delete modelUniform;
 		}
 	};
 }

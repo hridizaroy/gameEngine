@@ -358,16 +358,20 @@ void Engine::prepare_frame(const uint32_t imageIndex, const Scene* scene)
 		&(frame.camData),
 		sizeof(vkUtil::UBOData));
 
+
 	// Individual matricies are set here! 
 	uint32_t ii = 0; 
 	for (ii = 0; ii < scene->entities.size(); ii++)
 	{
-		frame.modelTransforms[ii] = scene->entities[ii]->info->transform->GetWorldMatrix();
+		frame.modelUniform->data[ii] = scene->entities[ii]->info->transform->GetWorldMatrix();
 	}
 
-	memcpy(frame.modelBufferWriteLocation,
-		frame.modelTransforms.data(),
+	memcpy(frame.modelUniform->bufferWriteLocation,
+		frame.modelUniform->data.data(),
 		sizeof(glm::mat4) * ii);
+
+	// TODO: Pass in the SDF Shapes here 
+
 
 	frame.fill_descriptor_set(device);
 }
@@ -793,9 +797,9 @@ void Engine::cleanup_swapchain()
 		device.freeMemory(frame.camDataBuffer.bufferMemory);
 		device.destroyBuffer(frame.camDataBuffer.buffer);
 
-		device.unmapMemory(frame.modelBuffer.bufferMemory);
-		device.freeMemory(frame.modelBuffer.bufferMemory);
-		device.destroyBuffer(frame.modelBuffer.buffer);
+		device.unmapMemory(frame.modelUniform->buffer.bufferMemory);
+		device.freeMemory(frame.modelUniform->buffer.bufferMemory);
+		device.destroyBuffer(frame.modelUniform->buffer.buffer);
 	}
 
 	device.destroySwapchainKHR(swapchain);

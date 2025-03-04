@@ -1,6 +1,6 @@
 #version 450
 
-layout(location = 0) in vec3 fragColor;
+layout(location = 0) in vec4 fragColor;
 
 layout(location = 0) out vec4 outColor;
 
@@ -15,6 +15,7 @@ struct Shape
 
 Shape shapes[] = 
 {
+	// { ID, Offset} 
 	{0, 0}
 };
 
@@ -134,6 +135,7 @@ void main()
 
 		pos += normalize(vec3(uv, -1.0)) * stepSize;
 	}
+
 }
 
 
