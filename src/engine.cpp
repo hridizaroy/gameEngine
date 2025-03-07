@@ -148,24 +148,29 @@ void Engine::make_device()
 void Engine::make_descriptor_set_layout()
 {
 	vkInit::DescriptorSetLayoutData bindings{};
-	bindings.count = 2;
+	bindings.count = 3;
 	bindings.indices.reserve(bindings.count);
 	bindings.types.reserve(bindings.count);
 	bindings.counts.reserve(bindings.count);
 	bindings.stages.reserve(bindings.count);
 
-	// Uniform buffer
+	// Uniform buffer (View, proj, and viewproj )
 	bindings.indices.push_back(0);
 	bindings.types.push_back(vk::DescriptorType::eUniformBuffer);
 	bindings.counts.push_back(1);
 	bindings.stages.push_back(vk::ShaderStageFlagBits::eVertex);
 
-	// Storage buffer
+	// Storage buffer (Models) 
 	bindings.indices.push_back(1);
 	bindings.types.push_back(vk::DescriptorType::eStorageBuffer);
 	bindings.counts.push_back(1);
 	bindings.stages.push_back(vk::ShaderStageFlagBits::eVertex);
 
+	// Storage buffer (Shapes) 
+	bindings.indices.push_back(2);
+	bindings.types.push_back(vk::DescriptorType::eStorageBuffer);
+	bindings.counts.push_back(1);
+	bindings.stages.push_back(vk::ShaderStageFlagBits::eFragment);
 
 	// Since storage buffer and uniform buffer are used with the same frequency,
 	// we are binding them to the same descriptor set
@@ -208,16 +213,19 @@ void Engine::make_framebuffers()
 void Engine::make_frame_resources()
 {
 	vkInit::DescriptorSetLayoutData bindings{};
-	bindings.count = 2;
+	bindings.count = 3;
 	bindings.types.reserve(bindings.count);
 
+	// Passes in the type of buffers we are using 
 	bindings.types.push_back(vk::DescriptorType::eUniformBuffer);
+	bindings.types.push_back(vk::DescriptorType::eStorageBuffer);
 	bindings.types.push_back(vk::DescriptorType::eStorageBuffer);
 
 	descriptorPool = vkInit::make_descriptor_pool(device,
 		static_cast<uint32_t>(swapchainFrames.size()), bindings);
 
 
+	// Data generated for every swapchain frame 
 	for (vkUtil::SwapchainFrame& frame : swapchainFrames)
 	{
 		frame.imageAvailable = vkInit::make_semaphore(device, debugMode);
@@ -370,7 +378,15 @@ void Engine::prepare_frame(const uint32_t imageIndex, const Scene* scene)
 		frame.modelUniform->data.data(),
 		sizeof(glm::mat4) * ii);
 
-	// TODO: Pass in the SDF Shapes here 
+	// Shapes to uniform buffer 
+	for (int s = 0; s < SHAPES_COUNT; s++)
+	{
+		frame.shapeUniform->data[s] = shapes[s];
+	}
+
+	memcpy(frame.shapeUniform->bufferWriteLocation,
+		frame.shapeUniform->data.data(),
+		sizeof(Shape) * SHAPES_COUNT);
 
 
 	frame.fill_descriptor_set(device);
@@ -800,6 +816,10 @@ void Engine::cleanup_swapchain()
 		device.unmapMemory(frame.modelUniform->buffer.bufferMemory);
 		device.freeMemory(frame.modelUniform->buffer.bufferMemory);
 		device.destroyBuffer(frame.modelUniform->buffer.buffer);
+
+		device.unmapMemory(frame.shapeUniform->buffer.bufferMemory);
+		device.freeMemory(frame.shapeUniform->buffer.bufferMemory);
+		device.destroyBuffer(frame.shapeUniform->buffer.buffer);
 	}
 
 	device.destroySwapchainKHR(swapchain);
@@ -849,3 +869,5 @@ Engine::~Engine()
 
 	glfwTerminate();
 }
+
+// hi :]

@@ -23,5 +23,27 @@ enum MeshType
 	TRIANGLE_FULLSCREEN
 };
 
+
+#define TEMPORARY
+
+// Note: This section purely immitates what type of
+//		 scene data we should expect as input 
+
+struct Shape
+{
+	int shapeType;
+	int startP;
+};
+
+const Shape shapes[] =
+{
+	// ID, Offset 
+	{0, 0}
+};
+#define SHAPES_COUNT 1
+
+#define endregion
+
+
 // Count of mandatory data per vertex 
 #define ATTRIBUTE_COUNT 10

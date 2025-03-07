@@ -5,6 +5,7 @@ layout(location = 0) in vec4 fragColor;
 layout(location = 0) out vec4 outColor;
 
 
+
 // Example data 
 
 struct Shape
@@ -13,11 +14,11 @@ struct Shape
 	int startP;
 };
 
-Shape shapes[] = 
-{
-	// { ID, Offset} 
-	{0, 0}
-};
+//Shape shapes[] = 
+//{
+//	// { ID, Offset} 
+//	{0, 0}
+//};
 
 float parameters[] = 
 { 
@@ -25,6 +26,12 @@ float parameters[] =
 	0.0f, 0.0f, -1.0f,	// Center 
 	1.0f				// Radius 
 };
+
+layout(std140, binding = 2) readonly buffer storageBuffer
+{
+	Shape shapes[];
+} ShapeData;
+
 
 
 // SDF functions 
@@ -121,9 +128,9 @@ void main()
 	{
 
 		// Brute force scene check 
-		for(int i = 0; i < shapes.length(); i++)
+		for(int i = 0; i < ShapeData.shapes.length(); i++)
 		{
-			sceneMap = min(SampleSDF(pos, shapes[i].shapeType, shapes[i].startP), 
+			sceneMap = min(SampleSDF(pos, ShapeData.shapes[i].shapeType, ShapeData.shapes[i].startP), 
 							sceneMap);
 		}
 
