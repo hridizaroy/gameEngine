@@ -39,9 +39,13 @@ layout(std140, binding = 2) readonly buffer storageBuffer
 float Sphere(vec3 p, vec3 center, float radius);
 float Box(vec3 p, vec3 center, vec3 size);
 float RoundBox(vec3 p, vec3 center, vec3 size, float rounding);
+float BoxFrame(vec3 p, vec3 center, vec3 size, float thickness);
 float SampleSDF(vec3 pos, int type, int startP);
 
 #define SPHERE 0
+#define BOX 1
+#define ROUND_BOX 2
+#define FRAME_BOX 3
 
 float map(vec3 p)
 {
@@ -52,10 +56,8 @@ float map(vec3 p)
     return d;
 }
 
-//
-// Calculate the normal by taking the central differences on the distance field.
-//
-vec3 calcNormal(vec3 p)
+/// Calculate the normal by taking the central differences on the distance field.
+vec3 CalcNormal(vec3 p)
 {
     vec2 e = vec2(1.0, -1.0) * 0.0005;
     return normalize(
@@ -65,44 +67,7 @@ vec3 calcNormal(vec3 p)
         e.xxx * map(p + e.xxx));
 }
 
-//vec4 allCalcs(vec2 fragCoord) {
-//    vec3 ro = vec3(0, 0, 1);                           // ray origin
-//
-//    vec2 iResolution = vec2(WIDTH, HEIGHT);
-//    vec2 q = (fragCoord.xy - .5 * iResolution.xy ) / iResolution.y;
-//    vec3 rd = normalize(vec3(q, 0.) - ro);             // ray direction for fragCoord.xy
-//
-//    vec4 color;
-//
-//    // March the distance field until a surface is hit.
-//    float h, t = 1.;
-//    for (int i = 0; i < 256; i++) {
-//        h = map(ro + rd * t);
-//        t += h;
-//        if (h < 0.01) break;
-//    }
-//
-//    if (h < 0.01) {
-//        vec3 p = ro + rd * t;
-//        vec3 normal = calcNormal(p);
-//        vec3 light = vec3(0, 2, 0);
-//        
-//        // Calculate diffuse lighting by taking the dot product of 
-//        // the light direction (light-p) and the normal.
-//        float dif = clamp(dot(normal, normalize(light - p)), 0., 1.);
-//		
-//        // Multiply by light intensity (5) and divide by the square
-//        // of the distance to the light.
-//        dif *= 5. / dot(light - p, light - p);
-//        
-//        
-//        color = vec4(vec3(pow(dif, 0.4545)), 1);     // Gamma correction
-//    } else {
-//        color = vec4(0, 0, 0, 1);
-//    }
-//
-//    return color;
-//}
+
 
 void main()
 {
@@ -164,6 +129,16 @@ float RoundBox(vec3 p, vec3 center, vec3 size, float rounding)
     return length(max(q, 0.0)) + min(max(q.x,max(q.y,q.z)),0.0) - rounding;
 }
 
+float FrameBox(vec3 p, vec3 center, vec3 b, float e )
+{
+  p = abs(p - center) - b;
+  vec3 q = abs(p+e)-e;
+  return min(min(
+      length(max(vec3(p.x,q.y,q.z),0.0))+min(max(p.x,max(q.y,q.z)),0.0),
+      length(max(vec3(q.x,p.y,q.z),0.0))+min(max(q.x,max(p.y,q.z)),0.0)),
+      length(max(vec3(q.x,q.y,p.z),0.0))+min(max(q.x,max(q.y,p.z)),0.0));
+}
+
 // Returns the dis to the given shape 
 float SampleSDF(vec3 p, int type, int startP)
 {
@@ -180,7 +155,59 @@ float SampleSDF(vec3 p, int type, int startP)
 				parameters[startP + 3]);
 
 			break;
+		case BOX: 
+			return Box(
+				p, 
+				// Box Center 
+				vec3(parameters[startP + 0], parameters[startP + 1], parameters[startP + 2]), 
+				// Size
+				vec3(0.1,0.1,0.1)
+			);
+		case ROUND_BOX:
+			return RoundBox(
+				p, 
+				// Box Center 
+				vec3(parameters[startP + 0], parameters[startP + 1], parameters[startP + 2]), 
+				// Size
+				vec3(0.1,0.1,0.1),
+				// Rounding 
+				0.1f
+			);
+		case FRAME_BOX:
+			return FrameBox(
+				p, 
+				// Box Center 
+				vec3(parameters[startP + 0], parameters[startP + 1], parameters[startP + 2]), 
+				// Size
+				vec3(0.1,0.1,0.1),
+				// Thickness 
+				0.025f
+			);
 	}
 
 	return 1.0f;
 }
+
+
+
+
+
+
+
+
+
+// LIGHTING 
+//			vec3 p = ro + rd * t;
+//        vec3 normal = calcNormal(p);
+//        vec3 light = vec3(0, 2, 0);
+//        
+//        // Calculate diffuse lighting by taking the dot product of 
+//        // the light direction (light-p) and the normal.
+//        float dif = clamp(dot(normal, normalize(light - p)), 0., 1.);
+//		
+//        // Multiply by light intensity (5) and divide by the square
+//        // of the distance to the light.
+//        dif *= 5. / dot(light - p, light - p);
+//        
+//        
+//        color = vec4(vec3(pow(dif, 0.4545)), 1);     // Gamma correction

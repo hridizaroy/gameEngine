@@ -38,7 +38,7 @@ struct Shape
 const Shape shapes[] =
 {
 	// ID, Offset 
-	{0, 0}
+	{3, 0}
 };
 #define SHAPES_COUNT 1
 

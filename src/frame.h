@@ -64,7 +64,7 @@ namespace vkUtil
 			// NOTE: The recreation of the huge arrays is a giant
 			//		 toll on the computer. Need to optimize where
 			//		 we do not need to recreate array unless 
-			//		necessary 
+			//		 necessary 
 
 
 
@@ -81,7 +81,7 @@ namespace vkUtil
 
 
 
-			{ // Camera view, proj ,viewProj
+			{ // Camera view, proj, viewProj
 				camDataBuffer = create_buffer(input);
 
 				camDataWriteLocation = logicalDevice.mapMemory(camDataBuffer.bufferMemory,
