@@ -31,16 +31,23 @@ enum MeshType
 
 struct Shape
 {
-	int shapeType;
-	int startP;
+	glm::uvec4 shapeInfo;
+
+	//uint32_t shapeType;
+	//uint32_t startP;
 };
 
 const Shape shapes[] =
 {
+	glm::uvec4(3, 0, 0, 0),
+	glm::uvec4(0, 7, 0, 0)
 	// ID, Offset 
-	{3, 0}
+	//{3, 0},
+	//{0, 7}
 };
-#define SHAPES_COUNT 1
+
+
+#define SHAPES_COUNT 2
 
 #define endregion
 

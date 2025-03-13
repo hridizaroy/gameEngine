@@ -388,7 +388,6 @@ void Engine::prepare_frame(const uint32_t imageIndex, const Scene* scene)
 		frame.shapeUniform->data.data(),
 		sizeof(Shape) * SHAPES_COUNT);
 
-
 	frame.fill_descriptor_set(device);
 }
 

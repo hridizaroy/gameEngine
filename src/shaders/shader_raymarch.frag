@@ -10,21 +10,22 @@ layout(location = 0) out vec4 outColor;
 
 struct Shape
 {
-	int shapeType;
-	int startP;
+	uvec4 shapeInfo;
+	//uint shapeType;
+	//uint startP;
 };
 
-//Shape shapes[] = 
-//{
-//	// { ID, Offset} 
-//	{0, 0}
-//};
 
 float parameters[] = 
 { 
+	// Frame Box 
+	 0.5f,  0.0f, -1.0f,	// Center
+	 0.1f,  0.1f,  0.1f,	// Size
+	 0.025f,				// Thickness 
+
 	// Sphere 
-	0.0f, 0.0f, -1.0f,	// Center 
-	1.0f				// Radius 
+	-0.5f, 0.0f, -1.0f,		// Center 
+	 0.1f					// Radius 
 };
 
 layout(std140, binding = 2) readonly buffer storageBuffer
@@ -40,7 +41,7 @@ float Sphere(vec3 p, vec3 center, float radius);
 float Box(vec3 p, vec3 center, vec3 size);
 float RoundBox(vec3 p, vec3 center, vec3 size, float rounding);
 float BoxFrame(vec3 p, vec3 center, vec3 size, float thickness);
-float SampleSDF(vec3 pos, int type, int startP);
+float SampleSDF(vec3 pos, uint type, uint startP);
 
 #define SPHERE 0
 #define BOX 1
@@ -51,7 +52,7 @@ float map(vec3 p)
 {
     float d =  RoundBox(p, vec3(-1, 0, -5), vec3(1, 1, 1), 0.1); //distance(p, vec3(-1, 0, -5)) - 1.;     // sphere at (-1,0,5) with radius 1
     //d = min(d, Box(p, vec3(2, 0, -3), vec3(1, 1, 1)));    // second sphere
-   // d = min(d, distance(p, vec3(-2, 0, -2)) - 1.);   // and another
+    // d = min(d, distance(p, vec3(-2, 0, -2)) - 1.);   // and another
     //d = min(d, p.y + 1.);                            // horizontal plane at y = -1
     return d;
 }
@@ -77,6 +78,17 @@ void main()
 	outColor = vec4(1.0, 1.0, 1.0, 1.0); //fragColor;
 	vec2 uv = fragColor.xy;
 
+	//if (ShapeData.shapes.length() == 3 )
+	//{
+	//	outColor = vec4(1,0,0,1);
+	//}
+	//else
+	//{
+	//	outColor = vec4(0,1,0,1);
+	//}
+	//
+	//return;
+
 
 	int stepMax = 100;
 	// TODO: Adjust to be current sample distance for
@@ -91,11 +103,12 @@ void main()
 
 	for(int s = 0; s < stepMax; s++)
 	{
-
 		// Brute force scene check 
 		for(int i = 0; i < ShapeData.shapes.length(); i++)
 		{
-			sceneMap = min(SampleSDF(pos, ShapeData.shapes[i].shapeType, ShapeData.shapes[i].startP), 
+			//sceneMap = min(SampleSDF(pos, ShapeData.shapes[i].shapeType, ShapeData.shapes[i].startP), 
+			//				sceneMap);
+			sceneMap = min(SampleSDF(pos, ShapeData.shapes[i].shapeInfo.x, ShapeData.shapes[i].shapeInfo.y), 
 							sceneMap);
 		}
 
@@ -140,7 +153,7 @@ float FrameBox(vec3 p, vec3 center, vec3 b, float e )
 }
 
 // Returns the dis to the given shape 
-float SampleSDF(vec3 p, int type, int startP)
+float SampleSDF(vec3 p, uint type, uint startP)
 {
 	switch(type)
 	{
@@ -153,7 +166,6 @@ float SampleSDF(vec3 p, int type, int startP)
 				vec3(parameters[startP + 0], parameters[startP + 1], parameters[startP + 2]), 
 				// Sphere radius 
 				parameters[startP + 3]);
-
 			break;
 		case BOX: 
 			return Box(
@@ -161,7 +173,7 @@ float SampleSDF(vec3 p, int type, int startP)
 				// Box Center 
 				vec3(parameters[startP + 0], parameters[startP + 1], parameters[startP + 2]), 
 				// Size
-				vec3(0.1,0.1,0.1)
+				vec3(parameters[startP + 3], parameters[startP + 4], parameters[startP + 5])
 			);
 		case ROUND_BOX:
 			return RoundBox(
@@ -169,9 +181,9 @@ float SampleSDF(vec3 p, int type, int startP)
 				// Box Center 
 				vec3(parameters[startP + 0], parameters[startP + 1], parameters[startP + 2]), 
 				// Size
-				vec3(0.1,0.1,0.1),
+				vec3(parameters[startP + 3], parameters[startP + 4], parameters[startP + 5]),
 				// Rounding 
-				0.1f
+				parameters[startP + 6]
 			);
 		case FRAME_BOX:
 			return FrameBox(
@@ -179,9 +191,9 @@ float SampleSDF(vec3 p, int type, int startP)
 				// Box Center 
 				vec3(parameters[startP + 0], parameters[startP + 1], parameters[startP + 2]), 
 				// Size
-				vec3(0.1,0.1,0.1),
+				vec3(parameters[startP + 3], parameters[startP + 4], parameters[startP + 5]),
 				// Thickness 
-				0.025f
+				parameters[startP + 6]
 			);
 	}
 
