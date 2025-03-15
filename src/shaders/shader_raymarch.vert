@@ -23,7 +23,7 @@ layout(std140, binding = 1) readonly buffer storageBuffer
 
 layout(location = 0) out vec4 fragColor;
 
-
+// TODO: Pass these values in 
 #define width  1800.0f
 #define height 1000.0f
 

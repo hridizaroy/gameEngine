@@ -16,23 +16,27 @@ struct Shape
 };
 
 
-float parameters[] = 
-{ 
-	// Frame Box 
-	 0.5f,  0.0f, -1.0f,	// Center
-	 0.1f,  0.1f,  0.1f,	// Size
-	 0.025f,				// Thickness 
+//float ShapeParamData.params[] = 
+//{ 
+//	// Frame Box 
+//	 0.5f,  0.0f, -1.0f,	// Center
+//	 0.1f,  0.1f,  0.1f,	// Size
+//	 0.025f,				// Thickness 
+//
+//	// Sphere 
+//	-0.5f, 0.0f, -1.0f,		// Center 
+//	 0.1f					// Radius 
+//};
 
-	// Sphere 
-	-0.5f, 0.0f, -1.0f,		// Center 
-	 0.1f					// Radius 
-};
-
-layout(std140, binding = 2) readonly buffer storageBuffer
+layout(std140, binding = 2) readonly buffer storageBufferShapes
 {
 	Shape shapes[];
 } ShapeData;
 
+layout(std140, binding = 3) readonly buffer storageBufferParams
+{
+	vec4 params[];
+} ShapeParamData;
 
 
 // SDF functions 
@@ -74,11 +78,7 @@ void main()
 {
     //outColor = allCalcs(gl_FragCoord.xy);
 
-    // Default color is screen UV 
-	outColor = vec4(1.0, 1.0, 1.0, 1.0); //fragColor;
-	vec2 uv = fragColor.xy;
-
-	//if (ShapeData.shapes.length() == 3 )
+	//if (ShapeParamData.params.length() == 11)
 	//{
 	//	outColor = vec4(1,0,0,1);
 	//}
@@ -89,6 +89,12 @@ void main()
 	//
 	//return;
 
+
+
+
+    // Default color is screen UV 
+	outColor = vec4(1.0, 1.0, 1.0, 1.0); //fragColor;
+	vec2 uv = fragColor.xy;
 
 	int stepMax = 100;
 	// TODO: Adjust to be current sample distance for
@@ -106,10 +112,11 @@ void main()
 		// Brute force scene check 
 		for(int i = 0; i < ShapeData.shapes.length(); i++)
 		{
-			//sceneMap = min(SampleSDF(pos, ShapeData.shapes[i].shapeType, ShapeData.shapes[i].startP), 
-			//				sceneMap);
-			sceneMap = min(SampleSDF(pos, ShapeData.shapes[i].shapeInfo.x, ShapeData.shapes[i].shapeInfo.y), 
-							sceneMap);
+			sceneMap = min(SampleSDF(
+							pos, 
+							ShapeData.shapes[i].shapeInfo.x, 
+							ShapeData.shapes[i].shapeInfo.y), 
+						sceneMap);
 		}
 
 		if (sceneMap <= threshold)
@@ -163,37 +170,37 @@ float SampleSDF(vec3 p, uint type, uint startP)
 				// Ray point 
 				p, 
 				// Sphere Center 
-				vec3(parameters[startP + 0], parameters[startP + 1], parameters[startP + 2]), 
+				vec3(ShapeParamData.params[startP + 0].x, ShapeParamData.params[startP + 1].x, ShapeParamData.params[startP + 2].x), 
 				// Sphere radius 
-				parameters[startP + 3]);
+				ShapeParamData.params[startP + 3].x);
 			break;
 		case BOX: 
 			return Box(
 				p, 
 				// Box Center 
-				vec3(parameters[startP + 0], parameters[startP + 1], parameters[startP + 2]), 
+				vec3(ShapeParamData.params[startP + 0].x, ShapeParamData.params[startP + 1].x, ShapeParamData.params[startP + 2].x), 
 				// Size
-				vec3(parameters[startP + 3], parameters[startP + 4], parameters[startP + 5])
+				vec3(ShapeParamData.params[startP + 3].x, ShapeParamData.params[startP + 4].x, ShapeParamData.params[startP + 5].x)
 			);
 		case ROUND_BOX:
 			return RoundBox(
 				p, 
 				// Box Center 
-				vec3(parameters[startP + 0], parameters[startP + 1], parameters[startP + 2]), 
+				vec3(ShapeParamData.params[startP + 0].x, ShapeParamData.params[startP + 1].x, ShapeParamData.params[startP + 2].x), 
 				// Size
-				vec3(parameters[startP + 3], parameters[startP + 4], parameters[startP + 5]),
+				vec3(ShapeParamData.params[startP + 3].x, ShapeParamData.params[startP + 4].x, ShapeParamData.params[startP + 5].x),
 				// Rounding 
-				parameters[startP + 6]
+				ShapeParamData.params[startP + 6].x
 			);
 		case FRAME_BOX:
 			return FrameBox(
 				p, 
 				// Box Center 
-				vec3(parameters[startP + 0], parameters[startP + 1], parameters[startP + 2]), 
+				vec3(ShapeParamData.params[startP + 0].x, ShapeParamData.params[startP + 1].x, ShapeParamData.params[startP + 2].x), 
 				// Size
-				vec3(parameters[startP + 3], parameters[startP + 4], parameters[startP + 5]),
+				vec3(ShapeParamData.params[startP + 3].x, ShapeParamData.params[startP + 4].x, ShapeParamData.params[startP + 5].x),
 				// Thickness 
-				parameters[startP + 6]
+				ShapeParamData.params[startP + 6].x
 			);
 	}
 

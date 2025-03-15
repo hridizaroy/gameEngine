@@ -14,15 +14,64 @@ struct UInfo
 	std::shared_ptr<Transform> transform;
 };
 
-struct SEntity
+struct Shape
 {
-	std::shared_ptr<UInfo> info;
-	uint32_t shapeType; 
+	// Type, StartParam, Padding... 
+	glm::uvec4 shapeInfo;
+
+	//uint32_t shapeType;
+	//uint32_t startP;
 };
 
 struct REntity
 {
-	std::shared_ptr<UInfo> info; 
+	std::shared_ptr<UInfo> info;
 	//std::shared_ptr<Mesh> mesh;
 	MeshType meshType; // Todo: Remove to be generic mesh 
 };
+
+struct SEntity
+{
+	std::shared_ptr<UInfo> info;
+	Shape shape;
+	glm::vec4* parameteres;
+
+	~SEntity()
+	{
+		delete[] parameteres;
+	}
+
+	const uint32_t GetShapeID()
+	{
+		return shape.shapeInfo.x;
+	}
+};
+
+namespace ShapeTypes
+{
+	#define SPHERE 0
+	#define BOX 1
+	#define ROUND_BOX 2
+	#define FRAME_BOX 3
+
+	inline uint32_t GetShapeParamSize(uint32_t shapeType)
+	{
+		switch (shapeType)
+		{
+		case SPHERE:
+			return 4;
+		case BOX:
+			return 6;
+		case ROUND_BOX:
+			return 7;
+		case FRAME_BOX:
+			return 7;
+		default:
+			break;
+		}
+
+		return -1; 
+	}
+};
+
+

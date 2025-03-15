@@ -24,33 +24,5 @@ enum MeshType
 };
 
 
-#define TEMPORARY
-
-// Note: This section purely immitates what type of
-//		 scene data we should expect as input 
-
-struct Shape
-{
-	glm::uvec4 shapeInfo;
-
-	//uint32_t shapeType;
-	//uint32_t startP;
-};
-
-const Shape shapes[] =
-{
-	glm::uvec4(3, 0, 0, 0),
-	glm::uvec4(0, 7, 0, 0)
-	// ID, Offset 
-	//{3, 0},
-	//{0, 7}
-};
-
-
-#define SHAPES_COUNT 2
-
-#define endregion
-
-
 // Count of mandatory data per vertex 
 #define ATTRIBUTE_COUNT 10

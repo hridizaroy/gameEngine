@@ -4,6 +4,8 @@
 #include "Entity.h"
 #include "buffers.h"
 
+// TODO: Organize into namespace 
+
 
 struct FinalizationChunk
 {
@@ -13,6 +15,11 @@ struct FinalizationChunk
 	const vk::CommandBuffer& commandBuffer;
 };
 
+
+
+//const uint32_t GetShapeParamCount(uint32_t shapeType);
+
+
 class Scene
 {
 public:
@@ -20,7 +27,8 @@ public:
 	~Scene();
 
 	void InitEntities(); 
-	std::vector<REntity*> entities; 
+	std::vector<REntity*> rasterEntities; 
+	std::vector<SEntity*> shapeEntities; 
 
 public:
 
@@ -40,5 +48,8 @@ private:
 
 	std::vector<float> lump;
 
+	// We need to keep count of the offset to the most current shape's parameters 
+	uint32_t paramEnd; 
+	void AddShapeEntity(uint32_t shapeType, std::string nameID, std::vector<float> parameters);
 
 };

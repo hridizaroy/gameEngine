@@ -3,6 +3,12 @@
 Scene::Scene()
 {
 	offset = 0;
+	paramEnd = 0;
+
+	InitEntities();
+
+
+
 }
 
 
@@ -14,39 +20,106 @@ void Scene::InitEntities()
 
 	// TODO: Load from file here 
 
-	//for (int y = -10; y < 10; y += 2)
-	//{
-	//	REntity entity;
-	//
-	//	std::shared_ptr<UInfo> info = std::make_shared<UInfo>();
-	//	info->name = "ID: " + std::to_string(y);
-	//	info->transform = std::make_shared<Transform>();
-	//	info->transform->MoveAbs(glm::vec3(-0.4f, y * 0.1f, 0.0f));
-	//
-	//	entity.info = info;
-	//	entity.meshType = TRIANGLE;
-	//	
-	//	entities.push_back(entity);
-	//}
-
-	
 	REntity* entity = new REntity;
-	
-	std::shared_ptr<UInfo> info = std::make_shared<UInfo>();
-	info->name = "ID: Fullscreen";
+
+	std::shared_ptr<UInfo> info = std::make_shared<UInfo>(); 
+	info->name = "ID: Fullscreen"; 
 	info->transform = std::make_shared<Transform>();
-	
+
 	entity->info = info;
 	entity->meshType = TRIANGLE_FULLSCREEN;
+
+	rasterEntities.push_back(entity);
+
+	// TODO: 
+	// [ ] Ensure that ID's are not repeated 
+	// [ ] Ensure parameter length matches with shape 
+	// [ ] Read shape data from file 
+
+	std::vector<float> tBox = std::vector<float>(
+		{
+		 0.5f,  0.0f, -1.0f,	// Center
+		 0.1f,  0.1f,  0.1f,	// Size
+		 0.025f,				// Thickness 
+		}
+	);
+	AddShapeEntity(FRAME_BOX, "TestingBox", tBox);
+
+
+	std::vector<float> tSphere = std::vector<float>(
+		{
+		-0.5f, 0.0f, -1.0f,		// Center 
+		 0.1f					// Radius 
+		}
+	);
+	AddShapeEntity(SPHERE, "TestingSphere", tSphere);
+}
+
+/// <summary>
+/// Adding a shape entity requires us to keep track of its individual shape 
+/// param data in a single array. 
+/// </summary>
+/// <param name="shapeType"></param>
+/// <param name="nameID"></param>
+void Scene::AddShapeEntity(uint32_t shapeType, std::string nameID, std::vector<float> parameters)
+{
+	SEntity* entity = new SEntity();
+	entity->info = std::make_shared<UInfo>();
+	entity->info->name = nameID; 
+	entity->info->transform = std::make_shared<Transform>();
 	
-	entities.push_back(entity);
-	
+	// Shape holds a vec4 of the data. First entry is shape type and
+	// second is the param end. We store the transform infomation in
+	// the info section 
+	entity->shape = Shape({ glm::uvec4(shapeType, paramEnd, 0, 0) });
+	uint32_t paramCount = ShapeTypes::GetShapeParamSize(shapeType);
+	paramEnd += paramCount;
+
+	// Adds parameter to be managed here 
+
+	// TODO: Compress floats into groups of vec4s instead
+	//		 of having a vec4 per parameters!!!! 
+
+
+	glm::vec4* paramsInVec4s = new glm::vec4[paramCount];
+
+	for (int i = 0; i < paramCount; i++)
+	{
+		// Convert parameter in a vec4 for padding 
+		paramsInVec4s[i] = {parameters[i], 0, 0, 0};
+	}
+
+	entity->parameteres = paramsInVec4s;
+
+	shapeEntities.push_back(entity);
 }
 
 
-
-
-
+/// <summary>
+/// Each shape requires a set amount of params to function. Assumes
+/// they are all floats 
+/// </summary>
+/// <param name="shapeType"></param>
+/// <returns></returns>
+//const uint32_t GetShapeParamCount(uint32_t shapeType)
+//{
+//	switch (shapeType)
+//	{
+//	case SPHERE:
+//		return 4;
+//	case BOX:
+//		return 6;
+//	case ROUND_BOX:
+//		return 7;
+//	case FRAME_BOX:
+//		return 7;
+//	default:
+//		break;
+//	}
+//
+//	std::cout << "Invalid shape type of " + shapeType << std::endl;
+//	return -1;
+//}
 
 
 void Scene::consume(const MeshType& meshType, const std::vector<float>& vertexData)
@@ -138,9 +211,16 @@ void Scene::cleanup(const vk::Device& logicalDevice) const
 
 Scene::~Scene()
 {
-	for (auto entity : entities)
+	for (auto entity : rasterEntities)
 	{
 		delete entity;
 	}
-	entities.clear();
+
+	for (auto entity : shapeEntities)
+	{
+		delete entity; 
+	}
+
+	rasterEntities.clear();
+	shapeEntities.clear(); 
 }

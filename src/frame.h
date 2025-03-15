@@ -2,6 +2,8 @@
 
 #include "config.h"
 #include "buffers.h"
+#include "Entity.h"
+#include "scene.h"
 
 namespace vkUtil
 {
@@ -47,18 +49,21 @@ namespace vkUtil
 		// TODO: Can we make this an array?
 		BufferHelper<glm::mat4>* modelUniform;
 		BufferHelper<Shape>* shapeUniform;
-		BufferHelper<float>* shapeParamUniform;
+		BufferHelper<glm::vec4>* shapeParamUniform;
 						
 						
 		// resource descriptors
 		vk::DescriptorBufferInfo uniformBufferDescriptor;
 		vk::DescriptorBufferInfo modelBufferDescriptor;
 		vk::DescriptorBufferInfo shapeBufferDescriptor; 
+		vk::DescriptorBufferInfo shapeParamBufferDescriptor; 
 
 		vk::DescriptorSet descriptorSet;
 
-		void make_descriptor_resources(const vk::Device& logicalDevice,
-			vk::PhysicalDevice& physicalDevice)
+		void make_descriptor_resources(
+			const vk::Device& logicalDevice,
+			vk::PhysicalDevice& physicalDevice, 
+			Scene* scene)
 		{
 
 			// NOTE: The recreation of the huge arrays is a giant
@@ -89,11 +94,6 @@ namespace vkUtil
 			}			
 			
 
-
-
-
-
-
 			// Storage buffer
 			// TODO: Should we avoid hard coding the "1024"
 			size_t maxBufferSize = 1024;
@@ -120,14 +120,46 @@ namespace vkUtil
 			{ // Shapes 
 
 				// Size
-				input.size = (SHAPES_COUNT + 1) * sizeof(Shape);
+				input.size = (scene->shapeEntities.size() + 1) * sizeof(Shape);
 
 				shapeUniform = new BufferHelper<Shape>();
 				shapeUniform->buffer = create_buffer(input);
 				shapeUniform->bufferWriteLocation = logicalDevice.mapMemory(shapeUniform->buffer.bufferMemory,
 					0, input.size);
+				
+				shapeUniform->data.resize((scene->shapeEntities.size() + 1));
+			}
 
-				shapeUniform->data.resize((SHAPES_COUNT + 1));
+
+
+			uint32_t paramCount = 0;
+			{ // Shape parameters 
+
+				// Match shape entities 
+				for (auto shape : scene->shapeEntities)
+				{
+					//scene->GetShapeParamCount(shape->shape.shapeInfo.a);
+					paramCount += ShapeTypes::GetShapeParamSize(shape->GetShapeID());
+				}
+
+
+				// Size
+				input.size = paramCount * sizeof(glm::vec4);
+
+				shapeParamUniform = new BufferHelper<glm::vec4>();
+				shapeParamUniform->buffer = create_buffer(input);
+				shapeParamUniform->bufferWriteLocation = logicalDevice.mapMemory(shapeParamUniform->buffer.bufferMemory,
+					0, input.size);
+
+				// We need to find out how many parameters where each entity
+				// can have some arbitrary amount 
+
+				
+
+				printf("Total parameters: %i \n", paramCount);
+
+				// Note: This might need additional params for extra spacing 
+				shapeParamUniform->data.resize(paramCount);
 			}
 
 
@@ -149,10 +181,14 @@ namespace vkUtil
 			// Shapes 
 			shapeBufferDescriptor.buffer = shapeUniform->buffer.buffer;
 			shapeBufferDescriptor.offset = 0;
-			shapeBufferDescriptor.range = (SHAPES_COUNT + 1) * sizeof(Shape);
+			shapeBufferDescriptor.range = (scene->shapeEntities.size() + 1) * sizeof(Shape);
 
 			// Shape Parameters 
+			shapeParamBufferDescriptor.buffer = shapeParamUniform->buffer.buffer;
+			shapeParamBufferDescriptor.offset = 0;
+			shapeParamBufferDescriptor.range = paramCount * sizeof(glm::vec4);
 		}
+
 
 		void fill_descriptor_set(const vk::Device& logicalDevice)
 		{
@@ -173,7 +209,7 @@ namespace vkUtil
 				writeInfo.dstArrayElement = 0;
 				writeInfo.pBufferInfo = &uniformBufferDescriptor;
 
-				logicalDevice.updateDescriptorSets(writeInfo, nullptr);
+				logicalDevice.updateDescriptorSets(writeInfo, nullptr); // On 4th continue this breaks 
 			}
 			
 			{ // Model
@@ -200,6 +236,20 @@ namespace vkUtil
 				// byte offset within binding for inline uniform blocks
 				writeInfo.dstArrayElement = 0;
 				writeInfo.pBufferInfo = &shapeBufferDescriptor;
+
+				logicalDevice.updateDescriptorSets(writeInfo, nullptr);
+			}
+
+			{ // Shape Params
+				vk::WriteDescriptorSet writeInfo;
+				writeInfo.descriptorCount = 1;
+				writeInfo.descriptorType = vk::DescriptorType::eStorageBuffer;
+				writeInfo.dstSet = descriptorSet;
+				writeInfo.dstBinding = 3;
+
+				// byte offset within binding for inline uniform blocks
+				writeInfo.dstArrayElement = 0;
+				writeInfo.pBufferInfo = &shapeParamBufferDescriptor;
 
 				logicalDevice.updateDescriptorSets(writeInfo, nullptr);
 			}

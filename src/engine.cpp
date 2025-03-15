@@ -148,7 +148,7 @@ void Engine::make_device()
 void Engine::make_descriptor_set_layout()
 {
 	vkInit::DescriptorSetLayoutData bindings{};
-	bindings.count = 3;
+	bindings.count = 4;
 	bindings.indices.reserve(bindings.count);
 	bindings.types.reserve(bindings.count);
 	bindings.counts.reserve(bindings.count);
@@ -171,6 +171,13 @@ void Engine::make_descriptor_set_layout()
 	bindings.types.push_back(vk::DescriptorType::eStorageBuffer);
 	bindings.counts.push_back(1);
 	bindings.stages.push_back(vk::ShaderStageFlagBits::eFragment);
+
+	// Storage buffer (Shapes Params) 
+	bindings.indices.push_back(3);
+	bindings.types.push_back(vk::DescriptorType::eStorageBuffer);
+	bindings.counts.push_back(1);
+	bindings.stages.push_back(vk::ShaderStageFlagBits::eFragment);
+
 
 	// Since storage buffer and uniform buffer are used with the same frequency,
 	// we are binding them to the same descriptor set
@@ -213,11 +220,12 @@ void Engine::make_framebuffers()
 void Engine::make_frame_resources()
 {
 	vkInit::DescriptorSetLayoutData bindings{};
-	bindings.count = 3;
+	bindings.count = 4;
 	bindings.types.reserve(bindings.count);
 
 	// Passes in the type of buffers we are using 
 	bindings.types.push_back(vk::DescriptorType::eUniformBuffer);
+	bindings.types.push_back(vk::DescriptorType::eStorageBuffer);
 	bindings.types.push_back(vk::DescriptorType::eStorageBuffer);
 	bindings.types.push_back(vk::DescriptorType::eStorageBuffer);
 
@@ -232,7 +240,7 @@ void Engine::make_frame_resources()
 		frame.renderFinished = vkInit::make_semaphore(device, debugMode);
 		frame.inFlight = vkInit::make_fence(device, debugMode);
 
-		frame.make_descriptor_resources(device, physicalDevice);
+		frame.make_descriptor_resources(device, physicalDevice, scene);
 
 		frame.descriptorSet = vkInit::allocate_descriptor_set(
 			device, descriptorPool, descriptorSetLayout);
@@ -334,9 +342,6 @@ void Engine::make_assets()
 
 	FinalizationChunk finalizationChunk{device, physicalDevice, graphicsQueue, mainCommandBuffer};
 	scene->finalize(finalizationChunk);
-
-	// Create entities for the scene 
-	scene->InitEntities();
 }
 
 void Engine::prepare_frame(const uint32_t imageIndex, const Scene* scene)
@@ -369,25 +374,60 @@ void Engine::prepare_frame(const uint32_t imageIndex, const Scene* scene)
 
 	// Individual matricies are set here! 
 	uint32_t ii = 0; 
-	for (ii = 0; ii < scene->entities.size(); ii++)
+	for (ii = 0; ii < scene->rasterEntities.size(); ii++)
 	{
-		frame.modelUniform->data[ii] = scene->entities[ii]->info->transform->GetWorldMatrix();
+		frame.modelUniform->data[ii] = scene->rasterEntities[ii]->info->transform->GetWorldMatrix();
 	}
 
 	memcpy(frame.modelUniform->bufferWriteLocation,
 		frame.modelUniform->data.data(),
 		sizeof(glm::mat4) * ii);
 
-	// Shapes to uniform buffer 
-	for (int s = 0; s < SHAPES_COUNT; s++)
+
+	// Shapes to storage buffer 
+	for (int s = 0; s < scene->shapeEntities.size(); s++)
 	{
-		frame.shapeUniform->data[s] = shapes[s];
+		frame.shapeUniform->data[s] = scene->shapeEntities[s]->shape; //shapes[s];
 	}
 
 	memcpy(frame.shapeUniform->bufferWriteLocation,
 		frame.shapeUniform->data.data(),
-		sizeof(Shape) * SHAPES_COUNT);
+		sizeof(Shape) * scene->shapeEntities.size());
 
+
+	// TODO: Combine lower for loop through entities with above 
+	//		 for more concise logic  
+
+	uint32_t totalParamLength = 0; 
+	// Shape params to uniform buffer 
+	for (int s = 0; s < scene->shapeEntities.size(); s++)
+	{
+		SEntity* entity = scene->shapeEntities[s];
+		uint32_t paramLength = ShapeTypes::GetShapeParamSize(entity->GetShapeID());
+
+		// TODO: Use memcpy or other OS base command 
+
+
+		// Copy cover param data to uniform data 
+		for (uint32_t p = 0; p < paramLength; p++)
+		{
+			frame.shapeParamUniform->data[totalParamLength + p] = 
+				entity->parameteres[p];
+
+			//printf("%i \n", totalParamLength + p);
+		}
+
+
+		totalParamLength += paramLength;
+
+
+		//frame.shapeParamUniform->data[s] = 0.0f; 
+	}
+
+	memcpy(frame.shapeParamUniform->bufferWriteLocation,
+		frame.shapeParamUniform->data.data(),
+		sizeof(glm::vec4) * totalParamLength);
+	
 	frame.fill_descriptor_set(device);
 }
 
@@ -444,9 +484,9 @@ void Engine::record_draw_commands(vk::CommandBuffer commandBuffer, uint32_t imag
 
 	// Draw each shape and instance duplicates 
 	uint32_t i = 0;
-	while (i < scene->entities.size())
+	while (i < scene->rasterEntities.size())
 	{
-		auto entity = scene->entities[i];
+		auto entity = scene->rasterEntities[i];
 		std::pair<size_t, size_t> offset_size = scene->lookupOffsetSize(entity->meshType);
 
 		size_t offset = offset_size.first;
@@ -459,12 +499,12 @@ void Engine::record_draw_commands(vk::CommandBuffer commandBuffer, uint32_t imag
 		// Search for amount of instances. Assume organized into groups 
 		uint32_t instanceCount = 0;
 		uint32_t ii = i;
-		for (ii = i + 1; ii < scene->entities.size(); ii++)
+		for (ii = i + 1; ii < scene->rasterEntities.size(); ii++)
 		{
 			// Iterate until you find entity with a different
 			// shape type. Then break. 
 
-			auto entityNeighbor = scene->entities[ii];
+			auto entityNeighbor = scene->rasterEntities[ii];
 
 			if (entityNeighbor->meshType != entity->meshType)
 			{
@@ -525,11 +565,11 @@ void Engine::render()
 	ImGui::NewFrame();
 
 	ImGui::Begin("Hierachy");
-	std::string size = std::to_string(scene->entities.size());
+	std::string size = std::to_string(scene->rasterEntities.size());
 	ImGui::Text(size.c_str());
 	
 	uint32_t id = 0;
-	for (auto entity : scene->entities)
+	for (auto entity : scene->rasterEntities)
 	{
 		//editorGUI.CreateREntityGUI(entity, id);
 		if (editorGUI.CreateREntitySelectGUI(entity, id))
@@ -808,7 +848,7 @@ void Engine::cleanup_swapchain()
 		device.destroySemaphore(frame.renderFinished);
 		device.destroyFence(frame.inFlight);
 
-		device.unmapMemory(frame.camDataBuffer.bufferMemory);
+		device.unmapMemory(frame.camDataBuffer.bufferMemory); 
 		device.freeMemory(frame.camDataBuffer.bufferMemory);
 		device.destroyBuffer(frame.camDataBuffer.buffer);
 
@@ -819,6 +859,10 @@ void Engine::cleanup_swapchain()
 		device.unmapMemory(frame.shapeUniform->buffer.bufferMemory);
 		device.freeMemory(frame.shapeUniform->buffer.bufferMemory);
 		device.destroyBuffer(frame.shapeUniform->buffer.buffer);
+
+		device.unmapMemory(frame.shapeParamUniform->buffer.bufferMemory);
+		device.freeMemory(frame.shapeParamUniform->buffer.bufferMemory);
+		device.destroyBuffer(frame.shapeParamUniform->buffer.buffer);
 	}
 
 	device.destroySwapchainKHR(swapchain);
