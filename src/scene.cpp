@@ -95,32 +95,6 @@ void Scene::AddShapeEntity(uint32_t shapeType, std::string nameID, std::vector<f
 }
 
 
-/// <summary>
-/// Each shape requires a set amount of params to function. Assumes
-/// they are all floats 
-/// </summary>
-/// <param name="shapeType"></param>
-/// <returns></returns>
-//const uint32_t GetShapeParamCount(uint32_t shapeType)
-//{
-//	switch (shapeType)
-//	{
-//	case SPHERE:
-//		return 4;
-//	case BOX:
-//		return 6;
-//	case ROUND_BOX:
-//		return 7;
-//	case FRAME_BOX:
-//		return 7;
-//	default:
-//		break;
-//	}
-//
-//	std::cout << "Invalid shape type of " + shapeType << std::endl;
-//	return -1;
-//}
-
 
 void Scene::consume(const MeshType& meshType, const std::vector<float>& vertexData)
 {

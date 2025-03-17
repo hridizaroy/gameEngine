@@ -12,11 +12,19 @@ public:
 	EditorGUI();
 
 	bool CreateREntitySelectGUI(REntity* entity, uint32_t id);
+	bool CreateSEntitySelectGUI(SEntity* entity, uint32_t id);
 	void CreateREntityInspectGUI(REntity* entity, uint32_t id);
+	void CreateSEntityInspectGUI(SEntity* entity, uint32_t id);
 
-	void UpdateInspector(REntity* entity);
+	void UpdateRasterInspector(REntity* entity);
+	void UpdateShapeInspector(SEntity* entity);
 	void DrawInspector();
 
 private:
-	REntity* activeEntity;
+
+	// TODO: Change to either enum or arbitrary inspector
+
+	bool showRaster; // Whether to show raster or shape entity 
+	REntity* activeREntity;
+	SEntity* activeSEntity;
 };

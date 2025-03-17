@@ -47,6 +47,9 @@ float RoundBox(vec3 p, vec3 center, vec3 size, float rounding);
 float BoxFrame(vec3 p, vec3 center, vec3 size, float thickness);
 float SampleSDF(vec3 pos, uint type, uint startP);
 
+float MapScene(vec3 pos);
+vec3 CalcNormal(vec3 p);
+
 #define SPHERE 0
 #define BOX 1
 #define ROUND_BOX 2
@@ -66,10 +69,30 @@ vec3 CalcNormal(vec3 p)
 {
     vec2 e = vec2(1.0, -1.0) * 0.0005;
     return normalize(
-        e.xyy * map(p + e.xyy) +
-        e.yyx * map(p + e.yyx) +
-        e.yxy * map(p + e.yxy) +
-        e.xxx * map(p + e.xxx));
+        e.xyy * MapScene(p + e.xyy) +
+        e.yyx * MapScene(p + e.yyx) +
+        e.yxy * MapScene(p + e.yxy) +
+        e.xxx * MapScene(p + e.xxx));
+}
+
+float MapScene(vec3 pos)
+{
+	float threshold = 0.01f; 
+	float internalMap = 99999999.9f;
+
+	// Brute force scene check 
+	for(int i = 0; i < ShapeData.shapes.length(); i++)
+	{
+		internalMap = min(SampleSDF(
+						pos, 
+						// Type 
+						ShapeData.shapes[i].shapeInfo.x, 
+						// Parameter offset 
+						ShapeData.shapes[i].shapeInfo.y), 
+					internalMap);
+	}
+
+	return internalMap;
 }
 
 
@@ -78,56 +101,35 @@ void main()
 {
     //outColor = allCalcs(gl_FragCoord.xy);
 
-	//if (ShapeParamData.params.length() == 11)
-	//{
-	//	outColor = vec4(1,0,0,1);
-	//}
-	//else
-	//{
-	//	outColor = vec4(0,1,0,1);
-	//}
-	//
-	//return;
-
-
-
 
     // Default color is screen UV 
-	outColor = vec4(1.0, 1.0, 1.0, 1.0); //fragColor;
 	vec2 uv = fragColor.xy;
-
-	int stepMax = 100;
+	
+	
+	int stepMax = 300;
+	float sceneMap = 99999.0f; 
+	
 	// TODO: Adjust to be current sample distance for
 	//		 dynamic adjustments 
-	float stepSize = 0.01f;
-	float threshold = 0.01f; 
+	float stepSize = 0.005f;
 
 	vec3 pos = vec3(uv, 0.0f);
-
-	float sceneMap = 99999.0f; 
 
 
 	for(int s = 0; s < stepMax; s++)
 	{
-		// Brute force scene check 
-		for(int i = 0; i < ShapeData.shapes.length(); i++)
-		{
-			sceneMap = min(SampleSDF(
-							pos, 
-							ShapeData.shapes[i].shapeInfo.x, 
-							ShapeData.shapes[i].shapeInfo.y), 
-						sceneMap);
-		}
+		sceneMap = min(MapScene(pos), sceneMap);
 
-		if (sceneMap <= threshold)
+		if(sceneMap <= 0.01f)
 		{
-			outColor = vec4(1.0, 0.0f, 0.0f, 1.0f);
+			outColor = vec4(CalcNormal(pos), 1.0);
 			return;
 		}
 
 		pos += normalize(vec3(uv, -1.0)) * stepSize;
 	}
 
+	outColor = vec4(1.0, 1.0, 1.0, 1.0);
 }
 
 

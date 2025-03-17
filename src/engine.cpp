@@ -569,12 +569,27 @@ void Engine::render()
 	ImGui::Text(size.c_str());
 	
 	uint32_t id = 0;
+
+	// Draw all raster entities in the hierachy 
 	for (auto entity : scene->rasterEntities)
 	{
 		//editorGUI.CreateREntityGUI(entity, id);
 		if (editorGUI.CreateREntitySelectGUI(entity, id))
 		{
-			editorGUI.UpdateInspector(entity);
+			editorGUI.UpdateRasterInspector(entity);
+		}
+		id++;
+	}
+
+	// Do not reset id because it continues after raster(s) 
+	//id = 0; 
+
+	// Draw all shape entities in the hierachy 
+	for (auto entity : scene->shapeEntities)
+	{
+		if (editorGUI.CreateSEntitySelectGUI(entity, id))
+		{
+			editorGUI.UpdateShapeInspector(entity);
 		}
 		id++;
 	}

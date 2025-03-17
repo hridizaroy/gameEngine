@@ -41,6 +41,9 @@ struct SEntity
 		delete[] parameteres;
 	}
 
+	/// <summary>
+	/// Get the the shape type 
+	/// </summary>
 	const uint32_t GetShapeID()
 	{
 		return shape.shapeInfo.x;
@@ -54,6 +57,10 @@ namespace ShapeTypes
 	#define ROUND_BOX 2
 	#define FRAME_BOX 3
 
+	/// <summary>
+	/// Each shape requires a set amount of params to function. Assumes
+	/// they are all floats 
+	/// </summary>
 	inline uint32_t GetShapeParamSize(uint32_t shapeType)
 	{
 		switch (shapeType)
