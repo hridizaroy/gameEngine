@@ -206,7 +206,6 @@ float SampleSDF(vec3 p, uint type, uint startP)
 	switch(type)
 	{
 		case SPHERE:
-
 			return Sphere(
 				// Ray point 
 				p, 
@@ -243,6 +242,8 @@ float SampleSDF(vec3 p, uint type, uint startP)
 				// Thickness 
 				ShapeParamData.params[startP + 6].x
 			);
+		default:
+			return 999.0;
 	}
 
 	return 1.0f;

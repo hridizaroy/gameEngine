@@ -40,7 +40,7 @@ void Scene::InitEntities()
 		{
 		 0.5f,  0.0f, -1.0f,	// Center
 		 0.1f,  0.1f,  0.1f,	// Size
-		 0.025f,				// Thickness 
+		 0.005f,				// Thickness 
 		}
 	);
 	AddShapeEntity(FRAME_BOX, "TestingBox", tBox);

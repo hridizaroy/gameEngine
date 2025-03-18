@@ -120,14 +120,14 @@ namespace vkUtil
 			{ // Shapes 
 
 				// Size
-				input.size = (scene->shapeEntities.size() + 1) * sizeof(Shape);
+				input.size = (scene->shapeEntities.size()) * sizeof(Shape);
 
 				shapeUniform = new BufferHelper<Shape>();
 				shapeUniform->buffer = create_buffer(input);
 				shapeUniform->bufferWriteLocation = logicalDevice.mapMemory(shapeUniform->buffer.bufferMemory,
 					0, input.size);
 				
-				shapeUniform->data.resize((scene->shapeEntities.size() + 1));
+				shapeUniform->data.resize((scene->shapeEntities.size()));
 			}
 
 
@@ -181,7 +181,7 @@ namespace vkUtil
 			// Shapes 
 			shapeBufferDescriptor.buffer = shapeUniform->buffer.buffer;
 			shapeBufferDescriptor.offset = 0;
-			shapeBufferDescriptor.range = (scene->shapeEntities.size() + 1) * sizeof(Shape);
+			shapeBufferDescriptor.range = (scene->shapeEntities.size()) * sizeof(Shape);
 
 			// Shape Parameters 
 			shapeParamBufferDescriptor.buffer = shapeParamUniform->buffer.buffer;
