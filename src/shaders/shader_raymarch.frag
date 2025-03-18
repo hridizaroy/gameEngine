@@ -13,20 +13,20 @@ struct Shape
 	uvec4 shapeInfo;
 	//uint shapeType;
 	//uint startP;
+
 };
 
+// Get what equation should be used for this shape 
+uint GetShapeType(Shape shape)
+{
+	return shape.shapeInfo.x;
+}
 
-//float ShapeParamData.params[] = 
-//{ 
-//	// Frame Box 
-//	 0.5f,  0.0f, -1.0f,	// Center
-//	 0.1f,  0.1f,  0.1f,	// Size
-//	 0.025f,				// Thickness 
-//
-//	// Sphere 
-//	-0.5f, 0.0f, -1.0f,		// Center 
-//	 0.1f					// Radius 
-//};
+// Offset into the parameter array for start 
+uint GetShapeOffset(Shape shape)
+{
+	return shape.shapeInfo.y;
+}
 
 layout(std140, binding = 2) readonly buffer storageBufferShapes
 {
@@ -38,6 +38,8 @@ layout(std140, binding = 3) readonly buffer storageBufferParams
 	vec4 params[];
 } ShapeParamData;
 
+// TODO: Add uniform buffer for lighting 
+
 
 // SDF functions 
 // From: https://iquilezles.org/articles/distfunctions/
@@ -48,21 +50,13 @@ float BoxFrame(vec3 p, vec3 center, vec3 size, float thickness);
 float SampleSDF(vec3 pos, uint type, uint startP);
 
 float MapScene(vec3 pos);
+float MapScene(vec3 pos, out uint shape);
 vec3 CalcNormal(vec3 p);
 
 #define SPHERE 0
 #define BOX 1
 #define ROUND_BOX 2
 #define FRAME_BOX 3
-
-float map(vec3 p)
-{
-    float d =  RoundBox(p, vec3(-1, 0, -5), vec3(1, 1, 1), 0.1); //distance(p, vec3(-1, 0, -5)) - 1.;     // sphere at (-1,0,5) with radius 1
-    //d = min(d, Box(p, vec3(2, 0, -3), vec3(1, 1, 1)));    // second sphere
-    // d = min(d, distance(p, vec3(-2, 0, -2)) - 1.);   // and another
-    //d = min(d, p.y + 1.);                            // horizontal plane at y = -1
-    return d;
-}
 
 /// Calculate the normal by taking the central differences on the distance field.
 vec3 CalcNormal(vec3 p)
@@ -77,7 +71,7 @@ vec3 CalcNormal(vec3 p)
 
 float MapScene(vec3 pos)
 {
-	float threshold = 0.01f; 
+	float threshold = 0.001f; 
 	float internalMap = 99999999.9f;
 
 	// Brute force scene check 
@@ -95,6 +89,44 @@ float MapScene(vec3 pos)
 	return internalMap;
 }
 
+float MapScene(vec3 pos, out uint id)
+{
+	float threshold = 0.001f; 
+	float internalMap = 99999999.9f;
+	id = -1; 
+
+	// Brute force scene check 
+	for(int i = 0; i < ShapeData.shapes.length(); i++)
+	{
+		// Check for new better shape 
+		
+		uint currType = ShapeData.shapes[i].shapeInfo.x;
+
+		float currMap = SampleSDF(
+						pos, 
+						// Type of shape 
+						currType, 
+						// Parameter offset 
+						ShapeData.shapes[i].shapeInfo.y);
+
+		// TODO: Convert to bitwise calculation 
+
+		if (currMap < internalMap)
+		{
+			// NOTE: We need to get access to the id and not
+			//		 just the shape type so we can get it 
+			//		 transform data 
+			id = i;
+			internalMap = currMap;
+		}
+
+		// When converting to bitwise this will be more optimal 
+		//internalMap = min(currMap, internalMap);
+	}
+
+	return internalMap;
+}
+
 
 
 void main()
@@ -106,27 +138,34 @@ void main()
 	vec2 uv = fragColor.xy;
 	
 	
-	int stepMax = 300;
+	int stepMax = 100;
 	float sceneMap = 99999.0f; 
 	
 	// TODO: Adjust to be current sample distance for
 	//		 dynamic adjustments 
-	float stepSize = 0.005f;
+	float stepSize = 0.001f;
 
 	vec3 pos = vec3(uv, 0.0f);
 
-
+	float maxDis = 3.0;
+	float dis = 0.0;
 	for(int s = 0; s < stepMax; s++)
 	{
-		sceneMap = min(MapScene(pos), sceneMap);
+		float currMap = MapScene(pos); 
+		sceneMap = min(currMap, sceneMap);
 
 		if(sceneMap <= 0.01f)
 		{
 			outColor = vec4(CalcNormal(pos), 1.0);
 			return;
 		}
-
-		pos += normalize(vec3(uv, -1.0)) * stepSize;
+		else if(dis >= maxDis)
+		{
+			break;
+		}
+		
+		dis += currMap;
+		pos += normalize(vec3(uv, -1.0)) * currMap;
 	}
 
 	outColor = vec4(1.0, 1.0, 1.0, 1.0);
