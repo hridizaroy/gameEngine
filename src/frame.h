@@ -5,6 +5,12 @@
 #include "Entity.h"
 #include "scene.h"
 
+// TODO: When calculating the normals of a scene
+//		 we should only be doing it for an individual 
+//		 scene entity that we approach. This should
+//		 make it less costly to compute and consistent 
+//		 when objects are moving 
+
 namespace vkUtil
 {
 	struct UBOData

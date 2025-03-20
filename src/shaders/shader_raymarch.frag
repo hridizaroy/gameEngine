@@ -40,6 +40,10 @@ layout(std140, binding = 3) readonly buffer storageBufferParams
 
 // TODO: Add uniform buffer for lighting 
 
+// Sample light data 
+vec3 light = vec3(0, 2, 0);
+
+
 
 // SDF functions 
 // From: https://iquilezles.org/articles/distfunctions/
@@ -57,6 +61,7 @@ vec3 CalcNormal(vec3 p);
 #define BOX 1
 #define ROUND_BOX 2
 #define FRAME_BOX 3
+
 
 /// Calculate the normal by taking the central differences on the distance field.
 vec3 CalcNormal(vec3 p)
@@ -156,7 +161,17 @@ void main()
 
 		if(sceneMap <= 0.01f)
 		{
-			outColor = vec4(CalcNormal(pos), 1.0);
+			vec3 normal = CalcNormal(pos);
+			float dif = clamp(dot(normal, normalize(light - pos)), 0., 1.);
+			
+	        // Multiply by light intensity (5) and divide by the square
+	        // of the distance to the light.
+	        dif *= 2. / dot(light - pos, light - pos);
+	        
+	        
+	        outColor = vec4(vec3(pow(dif, 0.4545)), 1);     // Gamma correction
+
+			//outColor = vec4(CalcNormal(pos), 1.0);
 			return;
 		}
 		else if(dis >= maxDis)
@@ -258,7 +273,7 @@ float SampleSDF(vec3 p, uint type, uint startP)
 
 
 // LIGHTING 
-//			vec3 p = ro + rd * t;
+//		  vec3 p = ro + rd * t;
 //        vec3 normal = calcNormal(p);
 //        vec3 light = vec3(0, 2, 0);
 //        
