@@ -576,7 +576,8 @@ void Engine::render()
 		//editorGUI.CreateREntityGUI(entity, id);
 		if (editorGUI.CreateREntitySelectGUI(entity, id))
 		{
-			editorGUI.UpdateRasterInspector(entity);
+			//editorGUI.UpdateRasterInspector(entity);
+			editorGUI.UpdateInspector(entity, RASTER_ENTITY);
 		}
 		id++;
 	}
@@ -589,7 +590,8 @@ void Engine::render()
 	{
 		if (editorGUI.CreateSEntitySelectGUI(entity, id))
 		{
-			editorGUI.UpdateShapeInspector(entity);
+			//editorGUI.UpdateShapeInspector(entity);
+			editorGUI.UpdateInspector(entity, SHAPE_ENTITY);
 		}
 		id++;
 	}

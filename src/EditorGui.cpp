@@ -6,10 +6,7 @@
 
 EditorGUI::EditorGUI()
 {
-	showRaster = true; 
-
-	activeREntity = nullptr;
-	activeSEntity = nullptr;
+	activeType = EMPTY;
 }
 
 /// <summary>
@@ -37,7 +34,7 @@ bool EditorGUI::CreateSEntitySelectGUI(SEntity* entity, uint32_t id)
 /// <summary>
 /// Generates a gui for a single REntity intended for the inspector 
 /// </summary>
-void EditorGUI::CreateREntityInspectGUI(REntity* entity, uint32_t id)
+void EditorGUI::CreateREntityInspectGUI(REntity* entity)
 {
 	std::shared_ptr<Transform> trans = entity->info->transform;
 
@@ -47,7 +44,7 @@ void EditorGUI::CreateREntityInspectGUI(REntity* entity, uint32_t id)
 
 	glm::vec3 holdRot = rot; 
 
-	ImGui::PushID(id);
+	//ImGui::PushID(id);
 	ImGui::Text(entity->info->name.c_str());
 
 	if (ImGui::DragFloat3("Position", &pos[0], 0.01f))
@@ -64,10 +61,10 @@ void EditorGUI::CreateREntityInspectGUI(REntity* entity, uint32_t id)
 		trans->SetScale(sca);
 	}
 
-	ImGui::PopID();
+	//ImGui::PopID();
 }
 
-void EditorGUI::CreateSEntityInspectGUI(SEntity* entity, uint32_t id)
+void EditorGUI::CreateSEntityInspectGUI(SEntity* entity)
 {
 	// TODO: When reading from file that holds shape data
 	//		 make it use that data to generate ui 
@@ -80,7 +77,7 @@ void EditorGUI::CreateSEntityInspectGUI(SEntity* entity, uint32_t id)
 
 	uint32_t shapeType = entity->GetShapeID();
 
-	ImGui::PushID(id);
+	//ImGui::PushID(id);
 	ImGui::Text(entity->info->name.c_str());
 
 	glm::vec3 pos = glm::vec3
@@ -99,35 +96,26 @@ void EditorGUI::CreateSEntityInspectGUI(SEntity* entity, uint32_t id)
 		entity->parameteres[2].x = pos[2];
 	}
 
-	ImGui::PopID();
+	//ImGui::PopID();
 }
 
 
 
 /// <summary>
-/// Sets a new active entity 
+/// Change the current inspector data and layout
 /// </summary>
-/// <param name="entity"></param>
-void EditorGUI::UpdateRasterInspector(REntity* entity)
+void EditorGUI::UpdateInspector(void* data, InspectorType inspectorType)
 {
-	activeREntity = entity;
+	// Check if valid input 
+	if (data == nullptr && inspectorType != EMPTY)
+	{
+		return;
+	}
 
-	// Update whether to showcase raster 
-	showRaster = true;
+	// Update data 
+	activeData = data;
+	activeType = inspectorType;
 }
-
-/// <summary>
-/// Set a new active entity 
-/// </summary>
-/// <param name="entity"></param>
-void EditorGUI::UpdateShapeInspector(SEntity* entity)
-{
-	activeSEntity = entity;
-
-	// Update whether to showcase shape 
-	showRaster = false;
-}
-
 
 /// <summary>
 /// Generates inspector information specific 
@@ -135,21 +123,20 @@ void EditorGUI::UpdateShapeInspector(SEntity* entity)
 void EditorGUI::DrawInspector()
 {
 	
-	if (showRaster)
+	switch (activeType)
 	{
-		if (activeREntity == nullptr)
-			return;
-
-		// Raster entity is current 
-		CreateREntityInspectGUI(activeREntity, 0);
-	}
-	else
-	{
-		if (activeSEntity == nullptr)
-			return;
-
-		// Shape entity is current 
-		CreateSEntityInspectGUI(activeSEntity, 0);
+	case EMPTY:
+		break;
+	case RASTER_ENTITY:
+		CreateREntityInspectGUI((REntity*)activeData);
+		break;
+	case SHAPE_ENTITY:
+		CreateSEntityInspectGUI((SEntity*)activeData);
+		break;
+	case CAMERA:
+		break;
+	default:
+		break;
 	}
 
 }
