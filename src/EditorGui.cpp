@@ -7,6 +7,20 @@
 EditorGUI::EditorGUI()
 {
 	activeType = EMPTY;
+
+
+	UInfo i = { "Sample", std::make_shared<Transform>() };
+	std::shared_ptr<UInfo> info = std::make_shared<UInfo>(i);
+
+	rasterEntity = new REntity();
+	rasterEntity->info = info;
+
+	Shape shape = { glm::vec4(SPHERE, 0, 0, 0) };
+	shapeEntity = new SEntity();
+	shapeEntity->info = info;
+	shapeEntity->shape = shape;
+	shapeEntity->parameteres = new glm::vec4[ShapeTypes::GetShapeParamSize(SPHERE)];
+	memset(shapeEntity->parameteres, 0, ShapeTypes::GetShapeParamSize(SPHERE) * sizeof(glm::vec4));
 }
 
 /// <summary>
@@ -29,6 +43,87 @@ bool EditorGUI::CreateSEntitySelectGUI(SEntity* entity, uint32_t id)
 	bool v = ImGui::Button(entity->info->name.c_str());
 	ImGui::PopID();
 	return v;
+}
+
+/// <summary>
+/// Generates GUI to allow a user to add an entity 
+/// </summary>
+/// <returns></returns>
+GenerationRequest EditorGUI::AddEntityGUI()
+{
+	// Draw selection GUI 
+
+	ImGui::Dummy(ImVec2(0.0f, 20.0f));
+
+	bool v = ImGui::Button("Add Entity");
+	ImGui::SameLine();
+	
+	// Combo for selecting gui type 
+	const char* items[] = { "RASTER_ENTITY", "SHAPE_ENTITY" };
+	static const char* current_item = items[0];
+	static int current = 0;
+
+	if (ImGui::BeginCombo(" ", current_item)) // The second parameter is the label previewed before opening the combo.
+	{
+		for (int n = 0; n < IM_ARRAYSIZE(items); n++)
+		{
+			bool is_selected = (current_item != items[n]); // New item 
+			if (ImGui::Selectable(items[n], is_selected))
+			{
+				current_item = items[n];
+				if (is_selected)
+				{
+					ImGui::SetItemDefaultFocus();
+					current = n;
+
+					// Entity has been selected 
+
+				}
+			}
+		}
+
+		// Update details to creation based on selection 
+
+		ImGui::EndCombo();
+	}
+
+
+
+
+	// Draw editors based on raster or shape 
+	switch (current)
+	{
+	case 0: // Raster
+		CreateREntityInspectGUI(rasterEntity);
+		break;
+	case 1: // Shape 
+		CreateSEntityInspectGUI(shapeEntity);
+		break; 
+	}
+
+
+	GenerationRequest request;
+
+	// Has the button been pressed? 
+	if (v)
+	{
+		// Decide what type of entity to return 
+		switch (current)
+		{
+		case 0: // Raster
+			request.type = RASTER_ENTITY;
+			request.data = rasterEntity;
+			return request;
+		case 1: // Shape 
+			request.type = SHAPE_ENTITY;
+			request.data = shapeEntity;
+			return request;
+		}
+	}
+
+	// Default return null 
+	request.type = EMPTY;
+	return request;
 }
 
 /// <summary>
@@ -64,6 +159,10 @@ void EditorGUI::CreateREntityInspectGUI(REntity* entity)
 	//ImGui::PopID();
 }
 
+/// <summary>
+/// Generates a gui for a single SEntity intended for the inspector 
+/// </summary>
+/// <param name="entity"></param>
 void EditorGUI::CreateSEntityInspectGUI(SEntity* entity)
 {
 	// TODO: When reading from file that holds shape data

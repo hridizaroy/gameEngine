@@ -94,6 +94,48 @@ void Scene::AddShapeEntity(uint32_t shapeType, std::string nameID, std::vector<f
 	shapeEntities.push_back(entity);
 }
 
+/// <summary>
+/// Adds a entity using a 
+/// </summary>
+void Scene::AddShapeEntity(uint32_t shapeType, std::string nameID, glm::vec4* parameters)
+{
+
+
+
+
+
+
+
+	SEntity* entity = new SEntity();
+	entity->info = std::make_shared<UInfo>();
+	entity->info->name = nameID;
+	entity->info->transform = std::make_shared<Transform>();
+
+	// Shape holds a vec4 of the data. First entry is shape type and
+	// second is the param end. We store the transform infomation in
+	// the info section 
+	entity->shape = Shape({ glm::uvec4(shapeType, paramEnd, 0, 0) });
+	uint32_t paramCount = ShapeTypes::GetShapeParamSize(shapeType);
+	paramEnd += paramCount;
+
+	// Adds parameter to be managed here 
+
+	// TODO: Compress floats into groups of vec4s instead
+	//		 of having a vec4 per parameters!!!! 
+
+
+
+	// Duplicate data into a seperate array  
+	uint32_t shapeLength = ShapeTypes::GetShapeParamSize(shapeType);
+	glm::vec4* parametersDupe= new glm::vec4[shapeLength];
+	memcpy(parametersDupe, parameters, (size_t)shapeLength);
+
+
+	entity->parameteres = parametersDupe;
+
+	shapeEntities.push_back(entity);
+
+}
 
 
 void Scene::consume(const MeshType& meshType, const std::vector<float>& vertexData)

@@ -596,6 +596,26 @@ void Engine::render()
 		id++;
 	}
 
+	GenerationRequest gRequest = editorGUI.AddEntityGUI();
+
+
+	switch (gRequest.type)
+	{
+	case RASTER_ENTITY:
+		break;
+	case SHAPE_ENTITY:
+		scene->AddShapeEntity(((SEntity*)gRequest.data)->GetShapeID(), ((SEntity*)gRequest.data)->info->name, ((SEntity*)gRequest.data)->parameteres);
+		break;
+	default:
+		break;
+	}
+
+	// TODO: Update the swapchain so that the frames have the correct amount
+	//		 of shape uniforms for the entities 
+	// 
+	//		 It will be necessary to update the buffer descriptor as well 
+	// vkUtil::SwapchainFrame& frame = swapchainFrames[imageIndex];
+
 	ImGui::End();
 
 	ImGui::Begin("Inspector");

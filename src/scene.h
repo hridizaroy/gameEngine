@@ -39,7 +39,11 @@ public:
 
 	std::pair<size_t, size_t> lookupOffsetSize(const MeshType& meshType);
 
+	void AddShapeEntity(uint32_t shapeType, std::string nameID, std::vector<float> parameters);
+	void AddShapeEntity(uint32_t shapeType, std::string nameID, glm::vec4*         parameters);
 	void cleanup(const vk::Device& logicalDevice) const;
+
+
 
 private:
 	vkUtil::BufferData vertexBufferData;
@@ -50,6 +54,5 @@ private:
 
 	// We need to keep count of the offset to the most current shape's parameters 
 	uint32_t paramEnd; 
-	void AddShapeEntity(uint32_t shapeType, std::string nameID, std::vector<float> parameters);
 
 };

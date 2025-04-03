@@ -14,16 +14,30 @@ enum InspectorType
 	CAMERA
 };
 
+struct GenerationRequest
+{
+	InspectorType type;
+	void* data; 
+};
+
 class EditorGUI
 {
 public:
 	EditorGUI();
 
+	// Hierach side 
+	// NOTE: Returns information useful for the engine  
+
 	bool CreateREntitySelectGUI(REntity* entity, uint32_t id);
 	bool CreateSEntitySelectGUI(SEntity* entity, uint32_t id);
+	
+	GenerationRequest AddEntityGUI();
+
+
+	// Inspector side 
+
 	void CreateREntityInspectGUI(REntity* entity);
 	void CreateSEntityInspectGUI(SEntity* entity);
-
 	void UpdateInspector(void* data, InspectorType inspectorType);
 	void DrawInspector();
 
@@ -37,4 +51,9 @@ private:
 
 	void*		  activeData; 
 	InspectorType activeType;
+
+	// Used for representing entity info on the hierachy side 
+
+	REntity* rasterEntity;
+	SEntity* shapeEntity;
 };
