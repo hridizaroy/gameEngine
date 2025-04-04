@@ -126,14 +126,16 @@ namespace vkUtil
 			{ // Shapes 
 
 				// Size
-				input.size = (scene->shapeEntities.size()) * sizeof(Shape);
+				// scene->shapeEntities.size())
+				input.size = maxBufferSize * sizeof(Shape);
 
 				shapeUniform = new BufferHelper<Shape>();
 				shapeUniform->buffer = create_buffer(input);
 				shapeUniform->bufferWriteLocation = logicalDevice.mapMemory(shapeUniform->buffer.bufferMemory,
 					0, input.size);
 				
-				shapeUniform->data.resize((scene->shapeEntities.size()));
+				//scene->shapeEntities.size()
+				shapeUniform->data.resize(maxBufferSize);
 			}
 
 
@@ -150,7 +152,7 @@ namespace vkUtil
 
 
 				// Size
-				input.size = paramCount * sizeof(glm::vec4);
+				input.size = maxBufferSize * sizeof(glm::vec4);
 
 				shapeParamUniform = new BufferHelper<glm::vec4>();
 				shapeParamUniform->buffer = create_buffer(input);
@@ -162,10 +164,10 @@ namespace vkUtil
 
 				
 
-				printf("Total parameters: %i \n", paramCount);
+				//printf("Total parameters: %i \n", paramCount);
 
 				// Note: This might need additional params for extra spacing 
-				shapeParamUniform->data.resize(paramCount);
+				shapeParamUniform->data.resize(maxBufferSize);
 			}
 
 

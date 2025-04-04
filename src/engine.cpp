@@ -604,7 +604,18 @@ void Engine::render()
 	case RASTER_ENTITY:
 		break;
 	case SHAPE_ENTITY:
+		// Send entity data to scene 
 		scene->AddShapeEntity(((SEntity*)gRequest.data)->GetShapeID(), ((SEntity*)gRequest.data)->info->name, ((SEntity*)gRequest.data)->parameteres);
+
+		// Add to descriptor 
+		for (vkUtil::SwapchainFrame& frame : swapchainFrames)
+		{
+			frame.shapeBufferDescriptor.setRange((scene->shapeEntities.size()) * sizeof(Shape));
+			frame.shapeParamBufferDescriptor.range =
+				frame.shapeParamBufferDescriptor.range +
+				ShapeTypes::GetShapeParamSize(((SEntity*)gRequest.data)->GetShapeID()) * sizeof(glm::vec4);
+		}
+
 		break;
 	default:
 		break;

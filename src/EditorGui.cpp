@@ -195,6 +195,25 @@ void EditorGUI::CreateSEntityInspectGUI(SEntity* entity)
 		entity->parameteres[2].x = pos[2];
 	}
 
+
+	float tempFloat = entity->parameteres[3].x;
+
+	switch (entity->GetShapeID())
+	{
+	case SPHERE:
+
+		if (ImGui::DragFloat("Radios", &tempFloat, 0.01))
+		{
+			//memcpy(&entity->parameteres[0], &pos[0], sizeof(float) * 3);
+
+			entity->parameteres[3].x = tempFloat;
+		}
+
+		break;
+	default:
+		break;
+	}
+
 	//ImGui::PopID();
 }
 

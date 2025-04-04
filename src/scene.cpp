@@ -128,7 +128,7 @@ void Scene::AddShapeEntity(uint32_t shapeType, std::string nameID, glm::vec4* pa
 	// Duplicate data into a seperate array  
 	uint32_t shapeLength = ShapeTypes::GetShapeParamSize(shapeType);
 	glm::vec4* parametersDupe= new glm::vec4[shapeLength];
-	memcpy(parametersDupe, parameters, (size_t)shapeLength);
+	memcpy(parametersDupe, parameters, (size_t)shapeLength * sizeof(glm::vec4));
 
 
 	entity->parameteres = parametersDupe;
