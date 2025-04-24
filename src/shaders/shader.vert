@@ -27,11 +27,12 @@ void main()
 {
 
 	// camData.viewProjection *
-	gl_Position =  ObjectData.model[gl_InstanceIndex] * vertexPosition;
+	gl_Position = ObjectData.model[gl_InstanceIndex] * vertexPosition;
+
 
 	vec2 uvN = 2.0 * uv - 1.0;
     uvN = vec2(uvN.x, uvN.y * height / width);
 
 	// Pass in uvs 
-	//fragColor = vec4(uvN, 0.0, 1.0);
+	fragColor = vec4(uvN, 0.0, 1.0);
 }

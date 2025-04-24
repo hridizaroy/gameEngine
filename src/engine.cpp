@@ -1010,9 +1010,18 @@ void Engine::cleanup_swapchain()
 
 void Engine::cleanup_pipeline()
 {
-	device.destroyPipeline(pipeline);
-	device.destroyPipelineLayout(layout);
-	device.destroyRenderPass(renderPass);
+	//device.destroyPipeline(pipeline);
+	//device.destroyPipelineLayout(layout);
+	//device.destroyRenderPass(renderPass);
+
+
+	device.destroyPipeline(raymarchOutput.pipeline);
+	device.destroyPipelineLayout(raymarchOutput.layout);
+	device.destroyRenderPass(raymarchOutput.renderPass);
+
+	device.destroyPipeline(rasterOutput.pipeline);
+	device.destroyPipelineLayout(rasterOutput.layout);
+	device.destroyRenderPass(rasterOutput.renderPass);
 
 	device.destroyRenderPass(imguiRenderPass);
 }

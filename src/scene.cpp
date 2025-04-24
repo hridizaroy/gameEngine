@@ -37,8 +37,9 @@ void Scene::InitEntities()
 		REntity* entity = new REntity;
 
 		std::shared_ptr<UInfo> info = std::make_shared<UInfo>();
-		info->name = "SampleRaster";
+		info->name = "Triangle";
 		info->transform = std::make_shared<Transform>();
+		info->transform->MoveAbs(10, 0, 0);
 
 		entity->info = info;
 		entity->meshType = TRIANGLE;
