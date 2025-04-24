@@ -55,11 +55,10 @@ GenerationRequest EditorGUI::AddEntityGUI()
 
 	ImGui::Dummy(ImVec2(0.0f, 20.0f));
 
-	bool v = ImGui::Button("Add Entity");
-	ImGui::SameLine();
+	
 	
 	// Combo for selecting gui type 
-	const char* items[] = { "RASTER_ENTITY", "SHAPE_ENTITY" };
+	const char* items[] = { "RASTER_ENTITY", "SHAPE_ENTITY"};
 	static const char* current_item = items[0];
 	static int current = 0;
 
@@ -87,6 +86,16 @@ GenerationRequest EditorGUI::AddEntityGUI()
 		ImGui::EndCombo();
 	}
 
+	ImGui::SameLine();
+	bool v = ImGui::Button("Add Entity");
+
+
+
+
+	// Shape Type combo 
+
+
+	
 
 
 
@@ -97,7 +106,8 @@ GenerationRequest EditorGUI::AddEntityGUI()
 		CreateREntityInspectGUI(rasterEntity);
 		break;
 	case 1: // Shape 
-		CreateSEntityInspectGUI(shapeEntity);
+		//CreateSEntityInspectGUI(shapeEntity);
+		CreateSEntityMaker(shapeEntity);
 		break; 
 	}
 
@@ -179,9 +189,41 @@ void EditorGUI::CreateSEntityInspectGUI(SEntity* entity)
 	//ImGui::PushID(id);
 	ImGui::Text(entity->info->name.c_str());
 
+
+
+
+	static std::vector<glm::vec4> parameters = std::vector<glm::vec4>(10);
+
+	// TODO: Check if amount of parameters needs to be increased dynamically 
+
+	// TODO: Reset parameters on shape type change 
+
+	const int shapeComboID = (int)"SHAPES";
+	static const char* shapes[4] = 
+	{
+		"SPHERE",
+		"BOX",
+		"ROUND_BOX",
+		"FRAME_BOX"
+	};
+	static const char* currentShape = shapes[0];
+	int itemCount = IM_ARRAYSIZE(shapes);
+
+	static uint32_t currentCombo = 0; 
+	if (CreateCombo(shapes, itemCount, currentShape, currentCombo, -1))
+	{
+		currentShape = shapes[currentCombo];
+		//entity->shape.shapeInfo.x = currentComboValue;
+	}
+	//entity->SetShapeID(curr);
+
+
+
+
+	uint32_t p = 0; // Current parameter in entity 
 	glm::vec3 pos = glm::vec3
-	{ 
-		entity->parameteres[0].x, 
+	{
+		entity->parameteres[0].x,
 		entity->parameteres[1].x,
 		entity->parameteres[2].x
 	};
@@ -190,26 +232,48 @@ void EditorGUI::CreateSEntityInspectGUI(SEntity* entity)
 	{
 		//memcpy(&entity->parameteres[0], &pos[0], sizeof(float) * 3);
 
-		entity->parameteres[0].x = pos[0];
-		entity->parameteres[1].x = pos[1];
-		entity->parameteres[2].x = pos[2];
+		entity->parameteres[p++].x = pos[0];
+		entity->parameteres[p++].x = pos[1];
+		entity->parameteres[p++].x = pos[2];
 	}
-
-
-	float tempFloat = entity->parameteres[3].x;
+	else
+	{
+		p += 3; 
+	}
 
 	switch (entity->GetShapeID())
 	{
 	case SPHERE:
 
-		if (ImGui::DragFloat("Radios", &tempFloat, 0.01))
+		if (ImGui::DragFloat("Radius", &parameters[0][0], 0.01))
 		{
-			//memcpy(&entity->parameteres[0], &pos[0], sizeof(float) * 3);
-
-			entity->parameteres[3].x = tempFloat;
+			entity->parameteres[p++].x = parameters[0][0];
 		}
 
 		break;
+	case BOX:
+
+		if (ImGui::DragFloat3("Size", &parameters[0][0], 0.01))
+		{
+			entity->parameteres[p++].x = parameters[0][0];
+			entity->parameteres[p++].x = parameters[1][0];
+			entity->parameteres[p++].x = parameters[2][0];
+		}
+
+		break;
+	case ROUND_BOX:
+		break;
+	case FRAME_BOX:
+
+		if (ImGui::DragFloat3("Size", &parameters[0][0], 0.01))
+		{
+			entity->parameteres[p++].x = parameters[0][0];
+			entity->parameteres[p++].x = parameters[1][0];
+			entity->parameteres[p++].x = parameters[2][0];
+		}
+
+		break;
+
 	default:
 		break;
 	}
@@ -217,6 +281,38 @@ void EditorGUI::CreateSEntityInspectGUI(SEntity* entity)
 	//ImGui::PopID();
 }
 
+void EditorGUI::CreateSEntityInspector(
+	SEntity* entity, 
+	static const char* shapes[],
+	uint32_t itemCount, 
+	static const char* currentShape)
+{
+	static uint32_t currentCombo = 0;
+	if (CreateCombo(shapes, itemCount, currentShape, currentCombo, -1))
+	{
+		currentShape = shapes[currentCombo];
+		//entity->shape.shapeInfo.x = currentComboValue;
+	}
+}
+
+/// <summary>
+/// Showcases the gui for the maker. Almost identical to 
+/// the inspector version asides from a static value 
+/// </summary>
+/// <param name="entity"></param>
+void EditorGUI::CreateSEntityMaker(SEntity* entity)
+{
+
+}
+
+/// <summary>
+/// Creates the gui for the inspector
+/// </summary>
+/// <param name="entity"></param>
+void EditorGUI::CreateSEntityInspector(SEntity* entity)
+{
+
+}
 
 
 /// <summary>
@@ -225,10 +321,11 @@ void EditorGUI::CreateSEntityInspectGUI(SEntity* entity)
 void EditorGUI::UpdateInspector(void* data, InspectorType inspectorType)
 {
 	// Check if valid input 
-	if (data == nullptr && inspectorType != EMPTY)
+	if (data == nullptr || inspectorType == EMPTY)
 	{
 		return;
 	}
+
 
 	// Update data 
 	activeData = data;
@@ -257,4 +354,50 @@ void EditorGUI::DrawInspector()
 		break;
 	}
 
+}
+
+
+/// <summary>
+/// Creates a combo used explicetly for the inspector. Only one at a time please 
+/// </summary>
+bool EditorGUI::CreateCombo(const char* items[], int itemCount, static const char* current_item, uint32_t& comboIndex, int id)
+{
+	ImGui::PushID(id);
+	//const char* items[] = { "Sphere", "Box", "RoundBox", "FrameBox" };
+	//static const char* current_item = items[0];
+
+	//printf("%i \n", IM_ARRAYSIZE(items));
+
+	bool newValue = false; 
+
+	if (ImGui::BeginCombo(" ", current_item))
+	{
+		for (int n = 0; n < itemCount; n++)
+		{
+			bool is_selected = (current_item != items[n]); // New item 
+			if (ImGui::Selectable(items[n], is_selected))
+			{
+				current_item = items[n];
+				if (is_selected)
+				{
+					ImGui::SetItemDefaultFocus();
+					//currentComboValue = n;
+
+					comboIndex = n;
+
+					// New selection 
+					newValue = true; 
+				}
+			}
+		}
+
+		// Update details to creation based on selection 
+
+		ImGui::EndCombo();
+	}
+	ImGui::PopID();
+
+	return newValue;
+
+	//return currentComboValue;
 }

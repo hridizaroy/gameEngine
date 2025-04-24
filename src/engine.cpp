@@ -186,22 +186,60 @@ void Engine::make_descriptor_set_layout()
 
 void Engine::make_pipeline()
 {
-	vkInit::GraphicsPipelineInBundle specification{};
-	specification.device = device;
-	specification.vertexFilepath = "./shaders/vertex_raymarch.spv";
-	specification.fragmentFilepath = "./shaders/fragment_raymarch.spv";
-	specification.swapchainExtent = swapchainExtent;
-	specification.swapchainImageFormat = swapchainFormat;
-	specification.descriptorSetLayout = descriptorSetLayout;
 
-	// TODO: Handle File IO errors
-	vkInit::GraphicsPipelineOutBundle output = vkInit::make_graphics_pipeline(specification, debugMode);
-	layout = output.layout;
-	renderPass = output.renderpass;
-	pipeline = output.pipeline;
+	{ // Fullscreen Raymrach specifictions 
+		vkInit::GraphicsPipelineInBundle specification{};
+		specification.device = device;
+		specification.vertexFilepath = "./shaders/vertex_raymarch.spv";
+		specification.fragmentFilepath = "./shaders/fragment_raymarch.spv";
+		specification.swapchainExtent = swapchainExtent;
+		specification.swapchainImageFormat = swapchainFormat;
+		specification.descriptorSetLayout = descriptorSetLayout;
+
+		// TODO: Handle File IO errors
+		vkInit::GraphicsPipelineOutBundle ro = vkInit::make_graphics_pipeline(specification, debugMode);
+		raymarchOutput = {};
+		raymarchOutput.layout = ro.layout;
+		raymarchOutput.renderPass = ro.renderpass;
+		raymarchOutput.pipeline = ro.pipeline;
+
+		set_pipeline_bundle(raymarchOutput);
+	}
+
+	{ // Rasterization 
+		vkInit::GraphicsPipelineInBundle specification{};
+		specification.device = device;
+		specification.vertexFilepath = "./shaders/vertex.spv";
+		specification.fragmentFilepath = "./shaders/fragment.spv";
+		specification.swapchainExtent = swapchainExtent;
+		specification.swapchainImageFormat = swapchainFormat;
+		specification.descriptorSetLayout = descriptorSetLayout;
+		
+		// TODO: Handle File IO errors
+		vkInit::GraphicsPipelineOutBundle ro = vkInit::make_graphics_pipeline(specification, debugMode);
+		rasterOutput = {};
+		rasterOutput.layout = ro.layout;
+		rasterOutput.renderPass = ro.renderpass;
+		rasterOutput.pipeline = ro.pipeline;
+	}
+
+	//vkInit::GraphicsPipelineOutBundle raymarchOutput = vkInit::make_graphics_pipeline(spec1, debugMode);
+	//VkPipeline raymarchPipeline = raymarchOutput.pipeline;
+	//
+	//vkInit::GraphicsPipelineOutBundle rasterOutput = vkInit::make_graphics_pipeline(spec2, debugMode);
+	//VkPipeline rasterPipeline = rasterOutput.pipeline;
+
+	
 
 	// imgui renderpass
 	create_imgui_renderpass();
+}
+
+void Engine::set_pipeline_bundle(PipelineOutBundle bundle)
+{
+	layout = bundle.layout;
+	renderPass = bundle.renderPass;
+	pipeline = bundle.pipeline;
 }
 
 void Engine::make_framebuffers()
@@ -372,6 +410,8 @@ void Engine::prepare_frame(const uint32_t imageIndex, const Scene* scene)
 		sizeof(vkUtil::UBOData));
 
 
+
+
 	// Individual matricies are set here! 
 	uint32_t ii = 0; 
 	for (ii = 0; ii < scene->rasterEntities.size(); ii++)
@@ -467,9 +507,11 @@ void Engine::record_draw_commands(vk::CommandBuffer commandBuffer, uint32_t imag
 	renderPassInfo.pClearValues = &clearColor;
 
 	commandBuffer.beginRenderPass(&renderPassInfo, vk::SubpassContents::eInline);
+	prepare_scene(commandBuffer);
 
+
+	// Raymarching 
 	commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline);
-
 	commandBuffer.bindDescriptorSets(
 		vk::PipelineBindPoint::eGraphics,
 		layout,
@@ -478,13 +520,10 @@ void Engine::record_draw_commands(vk::CommandBuffer commandBuffer, uint32_t imag
 		nullptr
 	);
 
-	prepare_scene(commandBuffer);
-
-
 
 	// Draw each shape and instance duplicates 
 	uint32_t i = 0;
-	while (i < scene->rasterEntities.size())
+	while (i < 1)
 	{
 		auto entity = scene->rasterEntities[i];
 		std::pair<size_t, size_t> offset_size = scene->lookupOffsetSize(entity->meshType);
@@ -509,18 +548,60 @@ void Engine::record_draw_commands(vk::CommandBuffer commandBuffer, uint32_t imag
 			if (entityNeighbor->meshType != entity->meshType)
 			{
 				// Difference found 
-				break; 
+				break;
 			}
 		}
 
-		instanceCount = ii; 
+		instanceCount = ii;
 		i += instanceCount;
 
 		commandBuffer.draw(vertexCount, instanceCount, offset, startInstance);
 		startInstance += instanceCount;
 	}
-	
-	commandBuffer.endRenderPass();
+
+
+
+	// Rasterization 
+	commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, rasterOutput.pipeline);
+	commandBuffer.bindDescriptorSets(
+		vk::PipelineBindPoint::eGraphics,
+		rasterOutput.layout,
+		0,
+		swapchainFrames[imageIndex].descriptorSet,
+		nullptr
+	);
+
+
+	i = 1;
+	while (i < scene->rasterEntities.size())
+	{
+		auto entity = scene->rasterEntities[i];
+		std::pair<size_t, size_t> offset_size = scene->lookupOffsetSize(entity->meshType);
+
+		size_t offset = offset_size.first;
+		size_t vertexCount = offset_size.second;
+		uint32_t startInstance = 0;
+
+		// Brute force group count
+		uint32_t instanceCount = 0;
+		uint32_t ii = i;
+		for (ii = i + 1; ii < scene->rasterEntities.size(); ii++)
+		{
+			auto entityNeighbor = scene->rasterEntities[ii];
+			if (entityNeighbor->meshType != entity->meshType)
+				break;
+		}
+
+		instanceCount = ii - i;
+		i += instanceCount;
+
+		commandBuffer.draw(vertexCount, instanceCount, offset, startInstance);
+		startInstance += instanceCount;
+	}
+
+
+
+	commandBuffer.endRenderPass();	
 
 
 	try
@@ -570,6 +651,7 @@ void Engine::render()
 	
 	uint32_t id = 0;
 
+
 	// Draw all raster entities in the hierachy 
 	for (auto entity : scene->rasterEntities)
 	{
@@ -605,12 +687,18 @@ void Engine::render()
 		break;
 	case SHAPE_ENTITY:
 		// Send entity data to scene 
-		scene->AddShapeEntity(((SEntity*)gRequest.data)->GetShapeID(), ((SEntity*)gRequest.data)->info->name, ((SEntity*)gRequest.data)->parameteres);
+		scene->AddShapeEntity(
+			((SEntity*)gRequest.data)->GetShapeID(), 
+			((SEntity*)gRequest.data)->info->name, 
+			((SEntity*)gRequest.data)->parameteres);
 
 		// Add to descriptor 
 		for (vkUtil::SwapchainFrame& frame : swapchainFrames)
 		{
+			// Set range equal to new number of shapes 
 			frame.shapeBufferDescriptor.setRange((scene->shapeEntities.size()) * sizeof(Shape));
+
+			// Add to range by number of new parameters times size of vec4 
 			frame.shapeParamBufferDescriptor.range =
 				frame.shapeParamBufferDescriptor.range +
 				ShapeTypes::GetShapeParamSize(((SEntity*)gRequest.data)->GetShapeID()) * sizeof(glm::vec4);

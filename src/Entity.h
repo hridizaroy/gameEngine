@@ -48,6 +48,11 @@ struct SEntity
 	{
 		return shape.shapeInfo.x;
 	}
+
+	void SetShapeID(uint32_t type)
+	{
+		shape.shapeInfo.x = type;
+	}
 };
 
 namespace ShapeTypes

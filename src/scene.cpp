@@ -20,16 +20,33 @@ void Scene::InitEntities()
 
 	// TODO: Load from file here 
 
-	REntity* entity = new REntity;
+	{ // Fullscreen triangle 
+		REntity* entity = new REntity;
 
-	std::shared_ptr<UInfo> info = std::make_shared<UInfo>(); 
-	info->name = "ID: Fullscreen"; 
-	info->transform = std::make_shared<Transform>();
+		std::shared_ptr<UInfo> info = std::make_shared<UInfo>();
+		info->name = "ID: Fullscreen";
+		info->transform = std::make_shared<Transform>();
 
-	entity->info = info;
-	entity->meshType = TRIANGLE_FULLSCREEN;
+		entity->info = info;
+		entity->meshType = TRIANGLE_FULLSCREEN;
 
-	rasterEntities.push_back(entity);
+		rasterEntities.push_back(entity);
+	}
+
+	{
+		REntity* entity = new REntity;
+
+		std::shared_ptr<UInfo> info = std::make_shared<UInfo>();
+		info->name = "SampleRaster";
+		info->transform = std::make_shared<Transform>();
+
+		entity->info = info;
+		entity->meshType = TRIANGLE;
+
+		rasterEntities.push_back(entity);
+	}
+
+	
 
 	// TODO: 
 	// [ ] Ensure that ID's are not repeated 
@@ -95,17 +112,10 @@ void Scene::AddShapeEntity(uint32_t shapeType, std::string nameID, std::vector<f
 }
 
 /// <summary>
-/// Adds a entity using a 
+/// Adds a entity by making a copy of the inputed parameters 
 /// </summary>
 void Scene::AddShapeEntity(uint32_t shapeType, std::string nameID, glm::vec4* parameters)
 {
-
-
-
-
-
-
-
 	SEntity* entity = new SEntity();
 	entity->info = std::make_shared<UInfo>();
 	entity->info->name = nameID;
@@ -124,10 +134,9 @@ void Scene::AddShapeEntity(uint32_t shapeType, std::string nameID, glm::vec4* pa
 	//		 of having a vec4 per parameters!!!! 
 
 
-
 	// Duplicate data into a seperate array  
 	uint32_t shapeLength = ShapeTypes::GetShapeParamSize(shapeType);
-	glm::vec4* parametersDupe= new glm::vec4[shapeLength];
+	glm::vec4* parametersDupe = new glm::vec4[shapeLength];
 	memcpy(parametersDupe, parameters, (size_t)shapeLength * sizeof(glm::vec4));
 
 

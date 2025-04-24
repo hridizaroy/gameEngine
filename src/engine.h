@@ -8,6 +8,14 @@
 
 #include "EditorGUI.h"
 
+// Very temporary just to get this thing done 
+struct PipelineOutBundle
+{
+	vk::PipelineLayout layout;
+	vk::RenderPass renderPass;
+	vk::Pipeline pipeline;
+};
+
 
 class Engine
 {
@@ -64,6 +72,8 @@ private:
 	const char *appName;
 
 	// pipeline-related variables
+	PipelineOutBundle raymarchOutput;
+	PipelineOutBundle rasterOutput;
 	vk::PipelineLayout layout;
 	vk::RenderPass renderPass;
 	vk::Pipeline pipeline;
@@ -101,6 +111,7 @@ private:
 	// pipeline setup
 	void make_descriptor_set_layout();
 	void make_pipeline();
+	void set_pipeline_bundle(PipelineOutBundle bundle);
 
 	void make_framebuffers();
 	void make_frame_resources();

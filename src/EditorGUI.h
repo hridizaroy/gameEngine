@@ -41,6 +41,18 @@ public:
 	void UpdateInspector(void* data, InspectorType inspectorType);
 	void DrawInspector();
 
+	// Helpers 
+
+	bool CreateCombo(const char* items[], int itemCount, static const char* current, uint32_t& comboIndex, int id);
+	void CreateSEntityInspector(SEntity* entity);
+	void CreateSEntityMaker(SEntity* entity);
+
+	void CreateSEntityInspector(
+		SEntity* entity,
+		static const char* shapes[],
+		uint32_t itemCount,
+		static const char* currentShape);
+
 private:
 
 	// TODO: Change to either enum or arbitrary inspector
@@ -56,4 +68,6 @@ private:
 
 	REntity* rasterEntity;
 	SEntity* shapeEntity;
+
+	//uint32_t currentComboValue;
 };
