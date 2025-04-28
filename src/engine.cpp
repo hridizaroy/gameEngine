@@ -23,6 +23,7 @@ Engine::Engine(int width, int height, GLFWwindow* window, const char* appName, b
 	this->window = window;
 	this->debugMode = debugMode;
 	this->appName = appName;
+	this->scene = new Scene();
 
 	if (debugMode)
 	{
@@ -32,12 +33,13 @@ Engine::Engine(int width, int height, GLFWwindow* window, const char* appName, b
 	make_instance();
 	make_device();
 
-	make_descriptor_set_layout();
+	make_descriptor_set_layouts();
 	make_pipeline();
 
 	finalize_setup();
 
 	make_assets();
+	scene->InitEntities();
 }
 
 void Engine::make_instance()
@@ -141,7 +143,7 @@ void Engine::make_device()
 	frameNum = 0;
 }
 
-void Engine::make_descriptor_set_layout()
+void Engine::make_descriptor_set_layouts()
 {
 	vkInit::DescriptorSetLayoutData bindings{};
 	bindings.count = 2;
@@ -165,7 +167,17 @@ void Engine::make_descriptor_set_layout()
 
 	// Since storage buffer and uniform buffer are used with the same frequency,
 	// we are binding them to the same descriptor set
-	descriptorSetLayout = vkInit::make_descriptor_set_layout(device, bindings);
+	frameSetLayout = vkInit::make_descriptor_set_layout(device, bindings);
+
+	// Image sampler
+	bindings.count = 1;
+
+	bindings.indices[0] = 0;
+	bindings.types[0] = vk::DescriptorType::eCombinedImageSampler;
+	bindings.counts[0] = 1;
+	bindings.stages[0] = vk::ShaderStageFlagBits::eFragment;
+
+	meshSetLayout = vkInit::make_descriptor_set_layout(device, bindings);
 }
 
 void Engine::make_pipeline()
@@ -176,7 +188,7 @@ void Engine::make_pipeline()
 	specification.fragmentFilepath = "./shaders/fragment.spv";
 	specification.swapchainExtent = swapchainExtent;
 	specification.swapchainImageFormat = swapchainFormat;
-	specification.descriptorSetLayout = descriptorSetLayout;
+	specification.descriptorSetLayouts = { frameSetLayout, meshSetLayout };
 
 	// TODO: Handle File IO errors
 	vkInit::GraphicsPipelineOutBundle output = vkInit::make_graphics_pipeline(specification, debugMode);
@@ -210,7 +222,7 @@ void Engine::make_frame_resources()
 	bindings.types.push_back(vk::DescriptorType::eUniformBuffer);
 	bindings.types.push_back(vk::DescriptorType::eStorageBuffer);
 
-	descriptorPool = vkInit::make_descriptor_pool(device,
+	frameDescriptorPool = vkInit::make_descriptor_pool(device,
 		static_cast<uint32_t>(swapchainFrames.size()), bindings);
 
 
@@ -223,7 +235,7 @@ void Engine::make_frame_resources()
 		frame.make_descriptor_resources(device, physicalDevice);
 
 		frame.descriptorSet = vkInit::allocate_descriptor_set(
-			device, descriptorPool, descriptorSetLayout);
+			device, frameDescriptorPool, frameSetLayout);
 	}
 }
 
@@ -250,51 +262,165 @@ void Engine::make_assets()
 	sceneData = new SceneData();
 
 	std::vector<float> vertexData = {
-		1.0f, 0.0f, 1.0f, 1.0f, 0.0f, -0.05f, 0.0f,
-		1.0f, 0.0f, 1.0f, 1.0f, 0.05f, 0.05f, 0.0f,
-		1.0f, 0.0f, 1.0f, 1.0f, -0.05f, 0.05f, 0.0f
+		 1.00f,  1.00f,  1.00f,  1.00f,	// Color
+		 -1.0f, -1.0f,  0.00f,  1.00f,	// Position
+		 0.00f,  0.00f,					// UV
+		 0.5f, 0.0f,					// TexCoord
+		
+		 1.00f,  0.00f,  1.00f,  1.00f,	// Color
+		 1.0f,  0.0f,  0.00f,  1.00f,	// Position
+		 0.00f,  0.5f,					// UV
+		 1.0f, 1.0f,					// TexCoord
+
+		 1.00f,  1.00f,  1.00f,  1.00f,	// Color
+		 1.0f,  1.0f,  0.00f,  1.00f,	// Position
+		 0.5f,  0.00f,					// UV
+		 0.0f, 1.0f,					// TexCoord
 	};
 
-	sceneData->consume(MeshType::TRIANGLE, vertexData);
+	//scene->consume(MeshType::TRIANGLE, vertexData);
 
-	vertexData = {
-		0.0f, 1.0f, 0.0f, 1.0f, -0.55f, -0.6f, +0.0f,
-		0.0f, 1.0f, 0.0f, 1.0f, -0.75f, -0.7f, +0.0f,
-		0.0f, 1.0f, 0.0f, 1.0f, -0.6f, -0.65f, +0.0f,
+	// TODO: Include UVs or organize nicely 
+	//vertexData = {
+	//	0.0f, 1.0f, 0.0f, 1.0f, -0.55f, -0.6f, +0.0f,
+	//	0.0f, 1.0f, 0.0f, 1.0f, -0.75f, -0.7f, +0.0f,
+	//	0.0f, 1.0f, 0.0f, 1.0f, -0.6f, -0.65f, +0.0f,
+	//
+	//	0.0f, 1.0f, 0.0f, 1.0f, -0.55f, -0.6f, +0.0f,
+	//	0.0f, 1.0f, 0.0f, 1.0f, -0.9f, -0.5f, +0.0f,
+	//	0.0f, 1.0f, 0.0f, 1.0f, -0.75f, -0.7f, +0.0f,
+	//
+	//	0.0f, 1.0f, 0.0f, 1.0f, -0.55f, -0.6f, +0.0f,
+	//	0.0f, 1.0f, 0.0f, 1.0f, -0.8f, +0.9f, +0.0f,
+	//	0.0f, 1.0f, 0.0f, 1.0f, -0.9f, -0.5f, +0.0f
+	//};
+	//
+	//scene->consume(MeshType::PENTAGON, vertexData);
+	
+	//vertexData = {
+	//	1.0f, 0.0f, 0.0f, 1.0f,
+	//	+0.8f, +0.9f, +0.0f,
+	//	0.0f,  0.0f,					// UV
+	//	0.5f, 0.0f,						// TexCoord
+	//	
+	//	1.0f, 0.0f, 0.0f, 1.0f,
+	//	+0.75f, -0.7f, +0.0f,
+	//	0.0f, 2.0f,
+	//	1.0f, 1.0f,
 
-		0.0f, 1.0f, 0.0f, 1.0f, -0.55f, -0.6f, +0.0f,
-		0.0f, 1.0f, 0.0f, 1.0f, -0.9f, -0.5f, +0.0f,
-		0.0f, 1.0f, 0.0f, 1.0f, -0.75f, -0.7f, +0.0f,
+	//	1.0f, 0.0f, 0.0f, 1.0f,
+	//	+0.9f, -0.5f, +0.0f,
+	//	2.0f, 0.0f,
+	//	0.0f, 0.5f,
+	//
+	//	1.0f, 0.0f, 0.0f, 1.0f,
+	//	+0.8f, +0.9f, +0.0f,
+	//	0.0f,  0.0f,
+	//	0.5f, 0.0f,
+	//	
+	//	1.0f, 0.0f, 0.0f, 1.0f,
+	//	+0.6f, -0.65f, +0.0f,
+	//	1.0f, 0.0f,
+	//	0.0, 0.5,
 
-		0.0f, 1.0f, 0.0f, 1.0f, -0.55f, -0.6f, +0.0f,
-		0.0f, 1.0f, 0.0f, 1.0f, -0.8f, +0.9f, +0.0f,
-		0.0f, 1.0f, 0.0f, 1.0f, -0.9f, -0.5f, +0.0f
+	//	1.0f, 0.0f, 0.0f, 1.0f,
+	//	+0.75f, -0.7f, +0.0f,
+	//	0.0f, 2.0f,
+	//	1.0f, 1.0f,
+	//
+	//	1.0f, 0.0f, 0.0f, 1.0f,
+	//	+0.8f, +0.9f, +0.0f,
+	//	0.0f, 2.0f,
+	//	1.0f, 1.0f,
+
+	//	1.0f, 0.0f, 0.0f, 1.0f,
+	//	+0.55f, -0.6f, +0.0f,
+	//	1.0f, 0.0f,
+	//	0.0, 0.5,
+
+	//	1.0f, 0.0f, 0.0f, 1.0f,
+	//	+0.6f, -0.65f, +0.0f,
+	//	1.0f, 0.0f,
+	//	0.0, 0.5,
+	//
+	//	1.0f, 0.0f, 0.0f, 1.0f,
+	//	+0.8f, +0.9f, +0.0f,
+	//	1.0f, 0.0f,
+	//	0.0, 0.5,
+
+	//	1.0f, 0.0f, 0.0f, 1.0f,
+	//	+0.7f, +0.85f, +0.0f,
+	//	1.0f, 0.0f,
+	//	0.0, 0.5,
+
+	//	1.0f, 0.0f, 0.0f, 1.0f,
+	//	+0.55f, -0.6f, +0.0f,
+	//	1.0f, 0.0f,
+	//	0.0, 0.5
+	//};
+	//
+	//scene->consume(MeshType::HEXAGON, vertexData);
+
+
+
+	vertexData =
+	{
+		 1.0f,  1.0f,  1.0f,  1.0f, // Color
+		-1.0f,  1.0f,  0.0f,  1.0f,	// Position
+		 0.0f,  0.0f,				// UV
+		 0.5f, 0.0f,				// TexCoord
+
+		 1.0f,  1.0f,  1.0f,  1.0f, // Color
+		-1.0f, -3.0f,  0.0f,  1.0f,	// Position
+		 0.0f,  2.0f,				// UV
+		 1.0f, 1.0f,				// TexCoord
+
+		 1.0f,  1.0f,  1.0f,  1.0f, // Color
+		 3.0f,  1.0f,  0.0f,  1.0f,	// Position
+		 2.0f,  0.0f,				// UV
+		 0.0f, 1.0f,				// TexCoord
 	};
 
-	sceneData->consume(MeshType::PENTAGON, vertexData);
+	scene->consume(MeshType::TRIANGLE_FULLSCREEN, vertexData);
 
-	vertexData = {
-		1.0f, 0.0f, 0.0f, 1.0f, +0.8f, +0.9f, +0.0f,
-		1.0f, 0.0f, 0.0f, 1.0f, +0.75f, -0.7f, +0.0f,
-		1.0f, 0.0f, 0.0f, 1.0f, +0.9f, -0.5f, +0.0f,
-
-		1.0f, 0.0f, 0.0f, 1.0f, +0.8f, +0.9f, +0.0f,
-		1.0f, 0.0f, 0.0f, 1.0f, +0.6f, -0.65f, +0.0f,
-		1.0f, 0.0f, 0.0f, 1.0f, +0.75f, -0.7f, +0.0f,
-
-		1.0f, 0.0f, 0.0f, 1.0f, +0.8f, +0.9f, +0.0f,
-		1.0f, 0.0f, 0.0f, 1.0f, +0.55f, -0.6f, +0.0f,
-		1.0f, 0.0f, 0.0f, 1.0f, +0.6f, -0.65f, +0.0f,
-
-		1.0f, 0.0f, 0.0f, 1.0f, +0.8f, +0.9f, +0.0f,
-		1.0f, 0.0f, 0.0f, 1.0f, +0.7f, +0.85f, +0.0f,
-		1.0f, 0.0f, 0.0f, 1.0f, +0.55f, -0.6f, +0.0f
-	};
-
-	sceneData->consume(MeshType::HEXAGON, vertexData);
 
 	FinalizationChunk finalizationChunk{device, physicalDevice, graphicsQueue, mainCommandBuffer};
-	sceneData->finalize(finalizationChunk);
+	scene->finalize(finalizationChunk);
+
+	// Materials
+	std::unordered_map<MeshType, const char*> filenames =
+	{
+		{MeshType::TRIANGLE, "./assets/textures/grass.webp"},
+		{MeshType::TRIANGLE_FULLSCREEN, "./assets/textures/grass.webp"},
+		{MeshType::HEXAGON, "./assets/textures/wood.jpg"},
+		{MeshType::PENTAGON, "./assets/textures/decal.jpg"}
+	};
+
+	// Make a descriptor pool
+	vkInit::DescriptorSetLayoutData bindings;
+	bindings.count = 1;
+	bindings.types.reserve(bindings.count);
+
+	bindings.types.push_back(vk::DescriptorType::eCombinedImageSampler);
+	
+	meshDescriptorPool = vkInit::make_descriptor_pool(device,
+		static_cast<uint32_t>(filenames.size()), bindings);
+
+	
+	// Make textures
+	vkImage::TextureInputChunk textureInfo;
+	textureInfo.commandBuffer = mainCommandBuffer;
+	textureInfo.queue = graphicsQueue;
+	textureInfo.logicalDevice = device;
+	textureInfo.physicalDevice = physicalDevice;
+	textureInfo.layout = meshSetLayout;
+	textureInfo.descriptorPool = meshDescriptorPool;
+
+	for (const auto& [object, filename] : filenames)
+	{
+		textureInfo.filename = filename;
+		materials[object] = new vkImage::Texture(textureInfo);
+	}
 }
 
 void Engine::prepare_frame(const uint32_t imageIndex, const Scene* scene)
@@ -315,6 +441,9 @@ void Engine::prepare_frame(const uint32_t imageIndex, const Scene* scene)
 
 	projection[1][1] *= -1.0f;
 
+	view = glm::mat4(1.0);
+	projection = glm::mat4(1.0);
+
 
 	frame.camData.view = view;
 	frame.camData.projection = projection;
@@ -324,18 +453,11 @@ void Engine::prepare_frame(const uint32_t imageIndex, const Scene* scene)
 		&(frame.camData),
 		sizeof(vkUtil::UBOData));
 
-	size_t ii = 0;
-	for (const glm::vec3& position : scene->trianglePositions)
+	// Individual matricies are set here! 
+	uint32_t ii = 0; 
+	for (ii = 0; ii < scene->entities.size(); ii++)
 	{
-		frame.modelTransforms[ii++] = glm::translate(glm::mat4(1.0), position);
-	}
-	for (const glm::vec3& position : scene->pentagonPositions)
-	{
-		frame.modelTransforms[ii++] = glm::translate(glm::mat4(1.0), position);
-	}
-	for (const glm::vec3& position : scene->hexagonPositions)
-	{
-		frame.modelTransforms[ii++] = glm::translate(glm::mat4(1.0), position);
+		frame.modelTransforms[ii] = scene->entities[ii].info->transform->GetWorldMatrix();
 	}
 
 	memcpy(frame.modelBufferWriteLocation,
@@ -347,7 +469,7 @@ void Engine::prepare_frame(const uint32_t imageIndex, const Scene* scene)
 
 void Engine::prepare_scene(const vk::CommandBuffer& commandBuffer)
 {
-	vk::Buffer vertexBuffers[] = { sceneData->getVertexBuffer() };
+	vk::Buffer vertexBuffers[] = { scene->getVertexBuffer() };
 	vk::DeviceSize offsets[] = { 0 };
 
 	commandBuffer.bindVertexBuffers(0, 1, vertexBuffers, offsets);
@@ -394,38 +516,49 @@ void Engine::record_draw_commands(vk::CommandBuffer commandBuffer, uint32_t imag
 
 	prepare_scene(commandBuffer);
 
-	// Triangle
-	std::pair<size_t, size_t> offset_size = sceneData->lookupOffsetSize(MeshType::TRIANGLE);
 
-	uint32_t offset = static_cast<uint32_t>(offset_size.first);
-	uint32_t vertexCount = static_cast<uint32_t>(offset_size.second);
-	uint32_t startInstance = 0;
-	uint32_t instanceCount = static_cast<uint32_t>(scene->trianglePositions.size());
 
-	commandBuffer.draw(vertexCount, instanceCount, offset, startInstance);
-	startInstance += instanceCount;
+	// Draw each shape and instance duplicates 
+	uint32_t i = 0;
+	while (i < scene->entities.size())
+	{
+		REntity entity = scene->entities[i];
+		std::pair<size_t, size_t> offset_size = scene->lookupOffsetSize(entity.meshType);
 
-	// Pentagon
-	offset_size = sceneData->lookupOffsetSize(MeshType::PENTAGON);
+		size_t offset = offset_size.first;
+		size_t vertexCount = offset_size.second;
+		uint32_t startInstance = 0;
 
-	offset = offset_size.first;
-	vertexCount = offset_size.second;
-	instanceCount = static_cast<uint32_t>(scene->pentagonPositions.size());
+		// TODO: Create a lookup table for amount of instances for a given type 
+		//		 instead of this brute foce search method. Combine scene and sceneData 
 
-	commandBuffer.draw(vertexCount, instanceCount, offset, startInstance);
-	startInstance += instanceCount;
+		// Search for amount of instances. Assume organized into groups 
+		uint32_t instanceCount = 0;
+		uint32_t ii = i;
+		for (ii = i + 1; ii < scene->entities.size(); ii++)
+		{
+			// Iterate until you find entity with a different
+			// shape type. Then break. 
 
-	// Hexagon
-	offset_size = sceneData->lookupOffsetSize(MeshType::HEXAGON);
+			REntity entityNeighbor = scene->entities[ii];
 
-	offset = offset_size.first;
-	vertexCount = offset_size.second;
-	instanceCount = static_cast<uint32_t>(scene->hexagonPositions.size());
+			if (entityNeighbor.meshType != entity.meshType)
+			{
+				// Difference found 
+				break; 
+			}
+		}
 
-	commandBuffer.draw(vertexCount, instanceCount, offset, startInstance);
-	startInstance += instanceCount;
+		instanceCount = ii; 
+		i += instanceCount;
 
+		materials[entity.meshType]->use(commandBuffer, layout);
+		commandBuffer.draw(vertexCount, instanceCount, offset, startInstance);
+		startInstance += instanceCount;
+	}
+	
 	commandBuffer.endRenderPass();
+
 
 	try
 	{
@@ -440,7 +573,7 @@ void Engine::record_draw_commands(vk::CommandBuffer commandBuffer, uint32_t imag
 	}
 }
 
-void Engine::render(Scene* scene)
+void Engine::render()
 {
 	device.waitForFences(1, &swapchainFrames[frameNum].inFlight, VK_TRUE, UINT64_MAX);
 	device.resetFences(1, &swapchainFrames[frameNum].inFlight);
@@ -745,7 +878,7 @@ void Engine::cleanup_swapchain()
 
 	device.destroySwapchainKHR(swapchain);
 
-	device.destroyDescriptorPool(descriptorPool);
+	device.destroyDescriptorPool(frameDescriptorPool);
 
 	cleanup_imgui();
 }
@@ -774,9 +907,17 @@ Engine::~Engine()
 
 	device.destroyCommandPool(commandPool);
 
-	device.destroyDescriptorSetLayout(descriptorSetLayout);
+	device.destroyDescriptorSetLayout(frameSetLayout);
 
-	sceneData->cleanup(device);
+	scene->cleanup(device);
+
+	for (const auto& [key, texture] : materials)
+	{
+		delete texture;
+	}
+
+	device.destroyDescriptorSetLayout(meshSetLayout);
+	device.destroyDescriptorPool(meshDescriptorPool);
 
 	device.destroy();
 

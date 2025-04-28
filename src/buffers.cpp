@@ -1,4 +1,5 @@
 #include "buffers.h"
+#include "singleTimeCommands.h"
 
 namespace vkUtil
 {
@@ -62,12 +63,7 @@ namespace vkUtil
 	void copy_buffer(const BufferData& srcBufferData, const BufferData& dstBufferData,
 		const vk::DeviceSize& size, const vk::Queue& queue, const vk::CommandBuffer& commandBuffer)
 	{
-		commandBuffer.reset();
-
-		vk::CommandBufferBeginInfo beginInfo{};
-		beginInfo.flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit;
-
-		commandBuffer.begin(beginInfo);
+		start_job(commandBuffer);
 
 		vk::BufferCopy copyRegion{};
 		copyRegion.srcOffset = 0;
@@ -76,13 +72,6 @@ namespace vkUtil
 		
 		commandBuffer.copyBuffer(srcBufferData.buffer, dstBufferData.buffer, 1, &copyRegion);
 
-		commandBuffer.end();
-
-		vk::SubmitInfo submitInfo{};
-		submitInfo.commandBufferCount = 1;
-		submitInfo.pCommandBuffers = &commandBuffer;
-
-		queue.submit(1, &submitInfo, nullptr);
-		queue.waitIdle();
+		end_job(commandBuffer, queue);
 	}
 }

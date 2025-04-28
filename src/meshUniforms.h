@@ -1,0 +1,50 @@
+#pragma once
+
+#include "config.h"
+
+namespace vkMesh
+{
+	vk::VertexInputBindingDescription getBasicVertexBindingDesc(uint32_t binding)
+	{
+		vk::VertexInputBindingDescription bindingDesc{};
+
+		bindingDesc.binding = binding;
+		bindingDesc.inputRate = vk::VertexInputRate::eVertex;
+		bindingDesc.stride = sizeof(float) * ATTRIBUTE_COUNT;
+
+		return bindingDesc;
+	}
+
+	std::vector<vk::VertexInputAttributeDescription> getBasicAttrDesc(uint32_t binding)
+	{
+		// Color
+		vk::VertexInputAttributeDescription colDesc{};
+		colDesc.binding = binding;
+		colDesc.format = vk::Format::eR32G32B32A32Sfloat;
+		colDesc.location = 0;
+		colDesc.offset = 0;
+
+		// Position
+		vk::VertexInputAttributeDescription posDesc{};
+		posDesc.binding = binding;
+		posDesc.format = vk::Format::eR32G32B32A32Sfloat;
+		posDesc.location = 1;
+		posDesc.offset = sizeof(float) * 4;
+
+		// UV 
+		vk::VertexInputAttributeDescription uvDesc{};
+		uvDesc.binding = binding;
+		uvDesc.format = vk::Format::eR32G32Sfloat;
+		uvDesc.location = 2;
+		uvDesc.offset = sizeof(float) * 8;
+
+		// TexCoord 
+		vk::VertexInputAttributeDescription texCoordDesc{};
+		texCoordDesc.binding = binding;
+		texCoordDesc.format = vk::Format::eR32G32Sfloat;
+		texCoordDesc.location = 3;
+		texCoordDesc.offset = sizeof(float) * 10;
+
+		return { colDesc, posDesc, uvDesc, texCoordDesc };
+	}
+}

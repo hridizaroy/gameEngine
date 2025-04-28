@@ -19,5 +19,9 @@ enum MeshType
 {
 	TRIANGLE,
 	PENTAGON,
-	HEXAGON
+	HEXAGON,
+	TRIANGLE_FULLSCREEN
 };
+
+// Count of mandatory data per vertex 
+#define ATTRIBUTE_COUNT 12

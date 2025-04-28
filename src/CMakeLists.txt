@@ -26,14 +26,21 @@ set(IMGUI_SRC
 	imgui/imgui_impl_vulkan.cpp
 )
 
+set(MISC_THIRD_PARTY
+	"stb_image.h"
+)
+
 # Add source to this project's executable.
 add_executable (gameEngine "engine.cpp" "engine.h" "main.cpp" "instance.h"
-				"config.h" "logging.h" "device.h" "queue_families.h"
+				"config.h" "logging.h" "logging.cpp" "device.h" "queue_families.h"
 				"frame.h" "shaders.h" "pipeline.h" "app.h" "app.cpp"
-				"render_structs.h" "scene.h" "scene.cpp" "commands.h" "swapchain.h"
-				"framebuffer.h" "sync.h" "mesh.h" "buffers.h" "buffers.cpp"
-				"SceneData.h" "SceneData.cpp" "descriptors.h"
-				${IMGUI_SRC})
+				"render_structs.h" "scene.h" "scene.cpp" "commands.h" "swapchain.h" "Material.h"
+				"Mesh.h" "Entity.h" "Transform.cpp" "Transform.h"
+				"framebuffer.h" "sync.h" "meshUniforms.h" "buffers.h" "buffers.cpp"
+				"descriptors.h" "descriptors.cpp" "image.h" "image.cpp"
+				"singleTimeCommands.h" "singleTimeCommands.cpp"
+				${IMGUI_SRC}
+				${MISC_THIRD_PARTY})
 
 target_link_libraries(gameEngine 
   "${PROJECT_SOURCE_DIR}/third-party/glfw-3.4.bin.WIN64/lib-vc2022/glfw3.lib"

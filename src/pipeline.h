@@ -3,7 +3,7 @@
 #include "config.h"
 #include "shaders.h"
 #include "render_structs.h"
-#include "mesh.h"
+#include "meshUniforms.h"
 
 namespace vkInit
 {
@@ -14,7 +14,7 @@ namespace vkInit
 		std::string fragmentFilepath;
 		vk::Extent2D swapchainExtent;
 		vk::Format swapchainImageFormat;
-		vk::DescriptorSetLayout descriptorSetLayout;
+		std::vector<vk::DescriptorSetLayout> descriptorSetLayouts;
 	};
 
 	struct GraphicsPipelineOutBundle
@@ -26,12 +26,12 @@ namespace vkInit
 
 
 	vk::PipelineLayout make_pipeline_layout(const vk::Device& device,
-		const vk::DescriptorSetLayout& descriptorSetLayout, bool debug)
+		const std::vector<vk::DescriptorSetLayout> descriptorSetLayouts, bool debug)
 	{
 		vk::PipelineLayoutCreateInfo layoutInfo;
 		layoutInfo.flags = vk::PipelineLayoutCreateFlags();
-		layoutInfo.setLayoutCount = 1; // Descriptor set layout
-		layoutInfo.pSetLayouts = &descriptorSetLayout;
+		layoutInfo.setLayoutCount = static_cast<uint32_t>(descriptorSetLayouts.size()); // Descriptor set layouts
+		layoutInfo.pSetLayouts = descriptorSetLayouts.data();
 
 		// Push constants
 		layoutInfo.pushConstantRangeCount = 0;
@@ -116,12 +116,13 @@ namespace vkInit
 		// Vertex Input
 		uint32_t binding = 0;
 		vk::VertexInputBindingDescription bindingDesc = vkMesh::getBasicVertexBindingDesc(binding);
-		std::array<vk::VertexInputAttributeDescription, 2> attrDesc = vkMesh::getBasicAttrDesc(binding);
+
+		std::vector<vk::VertexInputAttributeDescription> attrDesc = vkMesh::getBasicAttrDesc(binding);
 
 		vk::PipelineVertexInputStateCreateInfo vertexInputInfo = {};
 		vertexInputInfo.flags = vk::PipelineVertexInputStateCreateFlags();
 		vertexInputInfo.vertexBindingDescriptionCount = 1;
-		vertexInputInfo.vertexAttributeDescriptionCount = 2;
+		vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attrDesc.size());
 		vertexInputInfo.pVertexBindingDescriptions = &bindingDesc;
 		vertexInputInfo.pVertexAttributeDescriptions = attrDesc.data();
 
@@ -230,7 +231,7 @@ namespace vkInit
 			std::cout << "Create Pipeline Layout" << std::endl;
 		}
 		vk::PipelineLayout layout = make_pipeline_layout(specification.device,
-										specification.descriptorSetLayout, debug);
+										specification.descriptorSetLayouts, debug);
 		pipelineInfo.layout = layout;
 
 

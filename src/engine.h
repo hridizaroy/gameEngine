@@ -6,7 +6,8 @@
 
 #include "scene.h"
 
-#include "SceneData.h"
+#include "image.h"
+
 
 class Engine
 {
@@ -15,7 +16,7 @@ public:
 
 	~Engine();
 
-	void render(Scene* scene);
+	void render();
 
 private:
 	// TODO: Update variable/function naming conventions to be more organized and consistent
@@ -75,17 +76,24 @@ private:
 	int maxFramesInFlight, frameNum;
 
 	// Descriptor-related variables
-	vk::DescriptorSetLayout descriptorSetLayout;
-	vk::DescriptorPool descriptorPool;
+	vk::DescriptorSetLayout frameSetLayout;
+	vk::DescriptorPool frameDescriptorPool;
+	vk::DescriptorSetLayout meshSetLayout;
+	vk::DescriptorPool meshDescriptorPool;
+
 
 	// assets
 	SceneData* sceneData;
+	std::unordered_map<MeshType, vkImage::Texture*> materials;
 
 	// Imgui variables
 	vk::DescriptorPool imguiDescriptorPool;
 	vk::RenderPass imguiRenderPass;
 	// TODO: Make more efficient. Store as array?
 	vk::CommandPool imguiMainCommandPool;
+
+
+	Scene* scene;
 
 	// instance setup
 	void make_instance();
@@ -96,7 +104,7 @@ private:
 	void make_device();
 
 	// pipeline setup
-	void make_descriptor_set_layout();
+	void make_descriptor_set_layouts();
 	void make_pipeline();
 
 	void make_framebuffers();

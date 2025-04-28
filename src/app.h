@@ -10,13 +10,12 @@ class App
 private:
 	Engine* graphicsEngine;
 	GLFWwindow* window;
-	Scene* scene;
 
 	double lastTime, currentTime;
 	int numFrames;
 	float frameTime;
 
-	const char* appName = "Hridiza's Vulkan App";
+	const char* appName = "SDF Vulkan App";
 
 	void build_glfw_window(int width, int height, bool debugMode);
 

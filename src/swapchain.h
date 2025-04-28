@@ -4,6 +4,7 @@
 #include "logging.h"
 #include "queue_families.h"
 #include "frame.h"
+#include "image.h"
 
 
 namespace vkInit
@@ -248,30 +249,8 @@ namespace vkInit
 
 		for (size_t ii = 0; ii < images.size(); ii++)
 		{
-			vk::ImageViewCreateInfo createInfo = {};
-
-			createInfo.image = images[ii];
-			createInfo.viewType = vk::ImageViewType::e2D;
-
-			createInfo.components.r = vk::ComponentSwizzle::eIdentity;
-			createInfo.components.g = vk::ComponentSwizzle::eIdentity;
-			createInfo.components.b = vk::ComponentSwizzle::eIdentity;
-			createInfo.components.a = vk::ComponentSwizzle::eIdentity;
-
-			createInfo.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
-
-			// no mipmapping
-			createInfo.subresourceRange.baseMipLevel = 0;
-			createInfo.subresourceRange.levelCount = 1;
-
-			createInfo.subresourceRange.baseArrayLayer = 0;
-			createInfo.subresourceRange.layerCount = 1;
-
-			createInfo.format = format.format;
-
-
 			bundle.frames[ii].image = images[ii];
-			bundle.frames[ii].imageView = logicalDevice.createImageView(createInfo);
+			bundle.frames[ii].imageView = vkImage::make_image_view(logicalDevice, images[ii], format.format);
 		}
 
 		bundle.format = format.format;
