@@ -361,6 +361,25 @@ void Engine::make_assets()
 	//
 	//scene->consume(MeshType::HEXAGON, vertexData);
 
+	vertexData =
+	{
+		 1.0f,  1.0f,  1.0f,  1.0f, // Color
+		-1.0f,  1.0f,  0.0f,  1.0f,	// Position
+		 0.0f,  0.0f,				// UV
+		 0.5f, 0.0f,				// TexCoord
+
+		 1.0f,  1.0f,  1.0f,  1.0f, // Color
+		 -1.0f,  3.0f,  0.0f,  1.0f,	// Position
+		 0.0f,  2.0f,				// UV
+		 1.0f, 1.0f,				// TexCoord
+
+		 1.0f,  1.0f,  1.0f,  1.0f, // Color
+		 3.0f,  1.0f,  0.0f,  1.0f,	// Position
+		 2.0f,  0.0f,				// UV
+		 0.0f, 1.0f,				// TexCoord
+	};
+
+	scene->consume(MeshType::TRIANGLE_FULLSCREEN_2, vertexData);
 
 
 	vertexData =
@@ -371,12 +390,12 @@ void Engine::make_assets()
 		 0.5f, 0.0f,				// TexCoord
 
 		 1.0f,  1.0f,  1.0f,  1.0f, // Color
-		-1.0f, -3.0f,  0.0f,  1.0f,	// Position
+		-1.0f, -1.0f,  0.0f,  1.0f,	// Position
 		 0.0f,  2.0f,				// UV
 		 1.0f, 1.0f,				// TexCoord
 
 		 1.0f,  1.0f,  1.0f,  1.0f, // Color
-		 3.0f,  1.0f,  0.0f,  1.0f,	// Position
+		 1.0f,  1.0f,  0.0f,  1.0f,	// Position
 		 2.0f,  0.0f,				// UV
 		 0.0f, 1.0f,				// TexCoord
 	};
@@ -392,6 +411,7 @@ void Engine::make_assets()
 	{
 		{MeshType::TRIANGLE, "./assets/textures/grass.webp"},
 		{MeshType::TRIANGLE_FULLSCREEN, "./assets/textures/grass.webp"},
+		{MeshType::TRIANGLE_FULLSCREEN_2, "./assets/textures/grass.webp"},
 		{MeshType::HEXAGON, "./assets/textures/wood.jpg"},
 		{MeshType::PENTAGON, "./assets/textures/decal.jpg"}
 	};

@@ -20,7 +20,8 @@ enum MeshType
 	TRIANGLE,
 	PENTAGON,
 	HEXAGON,
-	TRIANGLE_FULLSCREEN
+	TRIANGLE_FULLSCREEN,
+	TRIANGLE_FULLSCREEN_2
 };
 
 // Count of mandatory data per vertex 
